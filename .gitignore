@@ -1,0 +1,6 @@
+.vercel
+node_modules/
+_syntax_check_*.js
+.env
+.env.local
+_gitrepo/
