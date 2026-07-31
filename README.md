@@ -1,40 +1,98 @@
-# Деплой на Vercel с общей базой Избранного
+# CinemaRate
 
-Содержимое этой папки — самодостаточный сайт:
+Live demo: https://cinemarate.vercel.app
 
-- `index.html` — само приложение;
-- `api/favorites.js` — чтение и запись общей базы `favorites.json`;
-- `favicon.ico` — иконка.
+CinemaRate is a single-page web app that aggregates movie and TV ratings from
+several public sources into one card, keeps a shared "Favorites" list in the
+cloud, and lets you discover titles by genre, country, language, year and
+rating. The UI is in Russian and understands Cyrillic queries, including
+transliteration ("artur stron" -> "Artur Stron").
 
-## Как выложить
+## Features
 
-1. Заведи бесплатный аккаунт на vercel.com (вход через GitHub или почту).
-2. Установи Node.js, открой командную строку в этой папке и выполни:
-   ```
-   npx vercel
-   ```
-   На вопросы отвечай Enter. В конце получишь адрес вида `имя.vercel.app`.
-3. В панели проекта на vercel.com открой вкладку **Storage** → **Create Database** → **Blob** → **Connect to Project**.
-   Доступ выдаётся через OIDC: Vercel сам подставляет короткоживущий токен и BLOB_STORE_ID.
-   Копировать и вводить ничего не надо.
-4. Снова выполни `npx vercel --prod`, чтобы сайт подхватил хранилище.
+- **One card, many ratings** - IMDb, Kinopoisk, Rotten Tomatoes, Metacritic and
+  a computed average score, plus poster, year, description and watch links.
+- **Cyrillic-aware search** - transliteration, key normalization and a relevance
+  score (`relScore`, threshold 0.34) so a Russian query no longer returns junk.
+- **Progressive rendering** - every remote call has its own time budget
+  (`withBudget`) and the card is painted as soon as partial data arrives, so a
+  result appears in seconds instead of waiting for the slowest source.
+- **Shared Favorites** - four categories (to watch / maybe / loved / watched)
+  with type tabs (all / films / series / documentaries), notes, JSON export and
+  import, and server-side sync through Vercel Blob so the list follows you
+  across devices.
+- **Discovery panel** - TMDB-backed browsing by type, genre, country, original
+  language, year range, minimum rating and sort order; results open straight
+  into the rating card.
+- **Three themes** - dark, high-contrast and light, cycled by one small button
+  and remembered in `localStorage`.
 
-После этого открой сайт с любого устройства. В панели «Моё Избранное» будет написано
-«Общая база» — значит, записи уходят на сервер и видны везде.
+## Tech stack
 
-## Что важно знать
+- Vanilla JavaScript, HTML and CSS in a single `index.html` (no build step,
+  no framework, no bundler).
+- Vercel serverless functions (CommonJS) for anything that needs a secret or a
+  server: `api/discover.js` and `api/favorites.js`.
+- Vercel Blob as the storage layer for the shared favorites file.
+- Public data sources: TMDB, IMDb suggest, Cinemeta, TVmaze, Wikidata,
+  Kinopoisk suggest, with a selectable CORS proxy for browser-side calls.
 
-- База публичная: кто знает адрес сайта, тот может её читать и менять. Для списка фильмов это нормально.
-- При первом открытии локальные записи браузера и серверные объединяются, ничего не теряется.
-- Файл `standalone/index.html` с диска продолжает работать как раньше, на локальной базе.
-- Экспорт и импорт JSON остаются на месте как резервная копия.
+## Architecture
 
-## Если Избранное не синхронизируется
+```
+index.html          UI, search pipeline, card builder, favorites, themes
+api/discover.js     TMDB proxy: health / genres / imdb / search / discover
+api/favorites.js    shared favorites store on Vercel Blob (GET, POST, ?debug=1)
+favicon.ico
+```
 
-Открой `адрес-сайта/api/favorites?debug=1`. Ответ покажет:
+The TMDB key never reaches the browser: it lives in the `TMDB_KEY` environment
+variable and is used only inside the serverless function, which also caches
+responses at the edge (`s-maxage=86400` for search and discover,
+`s-maxage=604800` for genre and IMDb lookups).
 
-- `hasStoreId` — привязано ли хранилище к проекту;
-- `hasOidc` — выдал ли Vercel токен функции;
-- `probe` — результат реального чтения базы или текст ошибки.
+### `api/discover.js` modes
 
-Если `hasStoreId: false` — хранилище не привязано либо после привязки не было повторного `npx vercel --prod`.
+| Mode | Purpose |
+| --- | --- |
+| `health` | reports whether the TMDB key is configured |
+| `genres` | localized genre lists for movies and TV |
+| `imdb` | resolves a TMDB id to an IMDb id |
+| `search` | title search, used when the name field is filled |
+| `discover` | filtered browsing (default mode) |
+
+Example: `/api/discover?mode=discover&type=tv&country=IL&sort=votes`
+
+## Run locally
+
+```bash
+npm install
+npx vercel dev
+```
+
+Set `TMDB_KEY` (a TMDB v3 key or a v4 read token) in your local environment or
+in the Vercel project settings; the discovery panel is disabled without it.
+`api/favorites.js` needs a Vercel Blob store connected to the project, and the
+rest of the app works without any key at all.
+
+## Deploy
+
+```bash
+npx vercel --prod
+```
+
+See `DEPLOY.md` (Russian) for the step-by-step setup of the Blob store and for
+troubleshooting favorites sync.
+
+## Roadmap
+
+- Filters and sorting inside Favorites (year, rating, genre, country).
+- Wikidata SPARQL as an optional second discovery source for small countries.
+- PWA install support, personal ratings and statistics, CSV export.
+
+## Notes
+
+This is a personal, non-commercial project. It uses the TMDB API but is not
+endorsed or certified by TMDB; all ratings belong to their respective sources.
+The shared favorites store is public by design: anyone who knows the site
+address can read and edit that list.
