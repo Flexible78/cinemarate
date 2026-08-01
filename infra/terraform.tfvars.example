@@ -1,0 +1,9 @@
+# cp terraform.tfvars.example terraform.tfvars and fill in the values.
+# terraform.tfvars is git-ignored: it holds secrets.
+
+tmdb_key = "put-your-tmdb-key-here"
+
+# Leave empty to keep /api/favorites open to anyone who knows the URL.
+# Set a long random string to require it: the browser picks it up once from
+# https://your-site/?token=THAT-STRING
+favorites_token = ""

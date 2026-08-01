@@ -40,10 +40,26 @@ npx vercel git connect
 After that every push to `main` deploys production automatically and every pull
 request gets its own preview URL.
 
+## Infrastructure as code
+
+The project, its GitHub connection and its environment variables are also
+described with Terraform in [`infra/`](infra/README.md), so the environment is
+reviewable in git and can be rebuilt from scratch. `terraform plan` is the
+quickest way to see whether anything was changed in the dashboard by hand. The
+steps that cannot be automated yet - the Blob store, above all - are listed in
+[`infra/MANUAL.md`](infra/MANUAL.md) together with a recovery drill.
+
 ## Good to know
 
-- The shared favorites store is public by design: anyone who knows the site
-  address can read and edit that list. For a watchlist this is acceptable.
+- The favorites store is shared on purpose: the same list is used from several
+  devices. Writes are merged server-side - each request carries the keys the
+  browser last saw, so an entry added on another device is never overwritten and
+  only a real deletion removes anything. The page also re-reads the server copy
+  once a minute and whenever the tab regains focus.
+- By default anyone who knows the site address can read and edit that list. Set
+  a `FAVORITES_TOKEN` environment variable to require a shared secret; the
+  browser stores it once from `https://your-site/?token=THE-SECRET`. While the
+  variable is unset the endpoint stays open and behaves exactly as before.
 - On first open, local browser entries and server entries are merged, so nothing
   is lost.
 - JSON export and import remain available as a manual backup.

@@ -4,3 +4,11 @@ _syntax_check_*.js
 .env
 .env.local
 _gitrepo/
+
+# terraform: state can contain secret values, tfvars does contain them
+infra/.terraform/
+infra/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+crash.log
