@@ -5,8 +5,11 @@ Live demo: https://cinemarate.vercel.app
 CinemaRate is a single-page web app that aggregates movie and TV ratings from
 several public sources into one card, keeps a shared "Favorites" list in the
 cloud, and lets you discover titles by genre, country, language, year and
-rating. The UI is in Russian and understands Cyrillic queries, including
+rating. The UI is in English and still understands Cyrillic queries, including
 transliteration ("artur stron" -> "Artur Stron").
+
+A one-page brief for a live walkthrough: [English](docs/PITCH.en.md) ·
+[Hebrew](docs/PITCH.he.md).
 
 ## Features
 
@@ -24,6 +27,12 @@ transliteration ("artur stron" -> "Artur Stron").
 - **Discovery panel** - TMDB-backed browsing by type, genre, country, original
   language, year range, minimum rating and sort order; results open straight
   into the rating card.
+- **Detective filter** - TMDB has no detective genre, so the genre list offers a
+  synthetic *Detective (mystery + crime)* option that queries both ids at once.
+- **Pick for tonight** - one button ranks the watchlist and answers with a title
+  and a one-line reason. With `MISTRAL_API_KEY` set the ranking is done by
+  Mistral; without it a local heuristic answers in the same shape, so the
+  feature never depends on an external provider being reachable.
 - **Three themes** - dark, high-contrast and light, cycled by one small button
   and remembered in `localStorage`.
 
@@ -95,6 +104,10 @@ query -> suggestions -> candidate list -> card -> favorites
 index.html          UI, search pipeline, card builder, favorites, themes
 api/discover.js     TMDB proxy: health / genres / imdb / search / discover
 api/favorites.js    shared favorites store on Vercel Blob (GET, POST, ?debug=1)
+api/pick.js         picks one title from the watchlist (Mistral or heuristic)
+infra/              Terraform description of the Vercel environment
+scripts/            local checks reused by CI
+.github/workflows/  static checks on every push and pull request
 favicon.ico
 ```
 
@@ -115,36 +128,129 @@ responses at the edge (`s-maxage=86400` for search and discover,
 
 Example: `/api/discover?mode=discover&type=tv&country=IL&sort=votes`
 
-## Run locally
+## From zero to your own copy
+
+The complete path from an empty machine to a deployed site. Nothing below
+requires a paid account.
+
+### 0. What you need
+
+| Thing | What it is for | Cost |
+| --- | --- | --- |
+| Node.js 20+ | running and deploying | free |
+| GitHub account | source, CI, automatic deploys | free |
+| Vercel account | hosting, functions, Blob storage | free tier |
+| TMDB API key | the discovery panel | free, issued instantly |
+| Mistral API key | AI pick of the evening | optional, free tier |
+
+### 1. Get the code
 
 ```bash
+git clone https://github.com/Flexible78/cinemarate.git
+cd cinemarate
 npm install
+```
+
+### 2. Get a TMDB key
+
+Register on themoviedb.org, open *Settings* -> *API* and copy either the v3 API
+key or the v4 read access token. Both are accepted: the function detects a JWT
+and sends it as a bearer token instead of a query parameter.
+
+### 3. Run it locally
+
+```bash
 npx vercel dev
 ```
 
-Set `TMDB_KEY` (a TMDB v3 key or a v4 read token) in your local environment or
-in the Vercel project settings; the discovery panel is disabled without it.
-`api/favorites.js` needs a Vercel Blob store connected to the project, and the
-rest of the app works without any key at all.
+Open <http://localhost:3000>. Set `TMDB_KEY` in your shell or in `.env.local`
+(git-ignored) to enable the discovery panel. Without it the rest of the app
+still works. Without a Blob store the favorites panel says *Local store* and
+keeps everything in the browser.
 
-## Deploy
+Run the same checks CI runs:
+
+```bash
+node --check api/favorites.js
+node scripts/check-inline-js.mjs index.html
+```
+
+### 4. First deploy
+
+```bash
+npx vercel
+```
+
+Accept the defaults; you get a `name.vercel.app` address.
+
+### 5. Attach Blob storage
+
+In the project dashboard: *Storage* -> *Create Database* -> *Blob* -> *Connect
+to Project*. Access is granted through OIDC, so Vercel injects a short-lived
+token and there is nothing to copy by hand.
+
+### 6. Set the environment variables
+
+| Variable | Required | Effect |
+| --- | --- | --- |
+| `TMDB_KEY` | for discovery | TMDB v3 key or v4 read token, server-side only |
+| `FAVORITES_TOKEN` | no | when set, `/api/favorites` and `/api/pick` require the secret; the browser stores it once from `?token=...` |
+| `MISTRAL_API_KEY` | no | switches the evening pick from the local heuristic to Mistral |
+| `MISTRAL_MODEL` | no | model override, default `mistral-small-latest` |
+
+Then redeploy so the functions pick them up:
 
 ```bash
 npx vercel --prod
 ```
 
-See `DEPLOY.md` (Russian) for the step-by-step setup of the Blob store and for
-troubleshooting favorites sync.
+### 7. Deploy automatically from GitHub
+
+```bash
+gh repo create cinemarate --public --source=. --remote=origin --push
+npx vercel git connect
+```
+
+From now on a push to `main` deploys production and every pull request gets its
+own preview URL. The CI workflow runs on both.
+
+### 8. Verify the deployment
+
+| Check | Expected |
+| --- | --- |
+| `/api/discover?mode=health` | `hasKey: true` |
+| `/api/favorites?debug=1` | `hasStoreId: true` and a successful read probe |
+| `/api/pick` (GET) | `engine: "mistral"` or `"heuristic"` |
+| Favorites panel | says *Shared store* with an entry count |
+| Actions tab | the CI run is green |
+
+### 9. Optional: manage the project as code
+
+```bash
+cd infra
+export VERCEL_API_TOKEN=...
+terraform init
+terraform plan
+```
+
+See [`infra/README.md`](infra/README.md) for adopting the existing project with
+`terraform import`, and [`infra/MANUAL.md`](infra/MANUAL.md) for the steps that
+are still manual and for the recovery drill.
+
+`DEPLOY.md` covers the same ground from the deployment side, including how to
+troubleshoot favorites sync.
 
 ## Roadmap
 
 - Filters and sorting inside Favorites (year, rating, genre, country).
 - Wikidata SPARQL as an optional second discovery source for small countries.
 - PWA install support, personal ratings and statistics, CSV export.
+- Log drain, an SLO with alerting, and a nightly backup of the shared list.
 
 ## Notes
 
 This is a personal, non-commercial project. It uses the TMDB API but is not
 endorsed or certified by TMDB; all ratings belong to their respective sources.
-The shared favorites store is public by design: anyone who knows the site
-address can read and edit that list.
+The favorites store is shared on purpose - the same list is used from several
+devices - and it is open unless `FAVORITES_TOKEN` is configured, in which case
+the list and the evening pick both require that secret.
