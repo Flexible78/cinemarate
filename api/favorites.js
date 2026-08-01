@@ -1,7 +1,7 @@
-// Общая база Избранного. Хранится в Vercel Blob рядом с сайтом.
-// Авторизация идёт через OIDC: Vercel сам выдаёт функции короткоживущий
-// токен, если к проекту подключён Blob-сторадж. Ничего вводить руками не нужно.
-// Если в проекте остался старый BLOB_READ_WRITE_TOKEN, он тоже подойдёт.
+// Shared favorites store. Kept in Vercel Blob next to the site.
+// Auth goes through OIDC: Vercel issues a short-lived token to the function
+// if a Blob store is connected to the project. Nothing has to be entered by hand.
+// If the project still has a legacy BLOB_READ_WRITE_TOKEN, it works as well.
 
 const FILE = "favorites.json"
 const EMPTY = { version: 2, updated: "", items: [] }
@@ -54,12 +54,12 @@ module.exports = async function (req, res) {
 	}
 
 	if (req.query && req.query.debug === "1") {
-		let probe = "не проверялось"
+		let probe = "not checked"
 		try {
 			const db = await readDb()
-			probe = "чтение прошло, записей: " + db.items.length
+			probe = "read ok, entries: " + db.items.length
 		} catch (e) {
-			probe = "ошибка чтения: " + String(e && e.message ? e.message : e)
+			probe = "read error: " + String(e && e.message ? e.message : e)
 		}
 		res.status(200).json({
 			node: process.version,
@@ -80,7 +80,7 @@ module.exports = async function (req, res) {
 			let body = req.body
 			if (typeof body === "string") body = JSON.parse(body || "{}")
 			if (!body || !Array.isArray(body.items)) {
-				res.status(400).json({ error: "жду JSON с полем items" })
+				res.status(400).json({ error: "expected JSON with field items" })
 				return
 			}
 			const clean = {
@@ -92,7 +92,7 @@ module.exports = async function (req, res) {
 			res.status(200).json({ ok: true, count: clean.items.length })
 			return
 		}
-		res.status(405).json({ error: "метод не поддерживается" })
+		res.status(405).json({ error: "method not allowed" })
 	} catch (e) {
 		res.status(500).json({ error: String(e && e.message ? e.message : e) })
 	}

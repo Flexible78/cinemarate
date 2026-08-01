@@ -95,8 +95,8 @@ module.exports = async function (req, res) {
 	try {
 		if (mode === "genres") {
 			const both = await Promise.all([
-				tmdb("/genre/movie/list", { language: "ru-RU" }),
-				tmdb("/genre/tv/list", { language: "ru-RU" }),
+				tmdb("/genre/movie/list", { language: "en-US" }),
+				tmdb("/genre/tv/list", { language: "en-US" }),
 			])
 			res.setHeader("Cache-Control", "public, s-maxage=604800, stale-while-revalidate=86400")
 			res.status(200).json({ movie: both[0].genres || [], tv: both[1].genres || [] })
@@ -124,7 +124,7 @@ module.exports = async function (req, res) {
 				return
 			}
 			const found = await tmdb("/search/" + type, {
-				language: "ru-RU",
+				language: "en-US",
 				include_adult: "false",
 				query: query,
 				page: num(q.page, 1, 500, 1),
@@ -154,7 +154,7 @@ module.exports = async function (req, res) {
 		}
 		const sort = sortAllowed[String(q.sort || "popularity")] || sortAllowed.popularity
 		const params = {
-			language: "ru-RU",
+			language: "en-US",
 			include_adult: "false",
 			sort_by: sort,
 			page: num(q.page, 1, 500, 1),

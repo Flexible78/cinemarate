@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23191919'/><path fill='%235E9FE8' d='M32 12l6.2 12.6 13.9 2-10 9.8 2.4 13.8L32 43.7 19.5 50.2l2.4-13.8-10-9.8 13.9-2z'/></svg>">
-<title>Рейтинги фильмов — версия без установки</title>
+<title>CinemaRate - movie and TV ratings in one place</title>
 <style>
   :root{
     --canvas:#191919; --surface:#202020; --raised:#282828;
@@ -132,22 +132,22 @@
     var KEY = "movieRatings.theme";
     var ORDER = ["dark", "contrast", "light"];
     var LABEL = {
-      dark: "\u263d \u0422\u0451\u043c\u043d\u0430\u044f",
-      contrast: "\u25c9 \u041a\u043e\u043d\u0442\u0440\u0430\u0441\u0442",
-      light: "\u2600 \u0421\u0432\u0435\u0442\u043b\u0430\u044f"
+      dark: "\u263d Dark",
+      contrast: "\u25c9 Contrast",
+      light: "\u2600 Light"
     };
     var PLAIN = {
-      dark: "\u0422\u0451\u043c\u043d\u0430\u044f",
-      contrast: "\u041a\u043e\u043d\u0442\u0440\u0430\u0441\u0442\u043d\u0430\u044f",
-      light: "\u0421\u0432\u0435\u0442\u043b\u0430\u044f"
+      dark: "Dark",
+      contrast: "Contrast",
+      light: "Light"
     };
-    var TIP = ". \u041d\u0430\u0436\u043c\u0438, \u0447\u0442\u043e\u0431\u044b \u043f\u0435\u0440\u0435\u043a\u043b\u044e\u0447\u0438\u0442\u044c";
+    var TIP = ". Click to switch";
     function apply(t){
       document.documentElement.setAttribute("data-theme", t);
       var b = document.getElementById("themebtn");
       if(b){
         b.textContent = LABEL[t] || LABEL.dark;
-        b.title = "\u0422\u0435\u043c\u0430: " + (PLAIN[t] || PLAIN.dark) + TIP;
+        b.title = "Theme: " + (PLAIN[t] || PLAIN.dark) + TIP;
         b.setAttribute("aria-pressed", t === "light" ? "true" : "false");
       }
     }
@@ -173,11 +173,11 @@
 <div class="wrap">
   <div class="head">
     <div>
-      <h1>Рейтинги фильмов и сериалов</h1>
-      <div class="sub">Сборка v18 · Версия без установки · IMDb · Rotten Tomatoes · Metacritic · Кинопоиск · TVmaze</div>
+      <h1>Movie and TV ratings</h1>
+      <div class="sub">Build v18 · No-install web app · IMDb · Rotten Tomatoes · Metacritic · Kinopoisk · TVmaze</div>
     </div>
     <div>
-      <span class="tip" style="margin:0">Прокси</span>
+      <span class="tip" style="margin:0">Proxy</span>
       <select id="proxy">
         <option value="0">allorigins</option>
         <option value="1">corsproxy.io</option>
@@ -190,11 +190,11 @@
   </div>
 
   <div class="row">
-    <input type="text" id="q" placeholder="Название или ссылка: Каин и Авель, Interstellar, kinopoisk.ru/series/493388/">
-    <button class="primary" id="go">Найти</button>
-    <button id="showfav">Избранное</button>
+    <input type="text" id="q" placeholder="Title or link: Cain and Abel, Interstellar, kinopoisk.ru/series/493388/">
+    <button class="primary" id="go">Search</button>
+    <button id="showfav">Favorites</button>
   </div>
-  <div class="tip">Набирай название — подсказки появятся сами, выбери фильм одним касанием. Ссылка на Кинопоиск или IMDb тоже подходит.</div>
+  <div class="tip">Start typing a title - suggestions appear as you type, tap one to open the card. An IMDb or Kinopoisk link works too.</div>
 
   <div id="sugg" class="panel hide"></div>
 
@@ -205,10 +205,10 @@
   <div id="discpanel" class="panel hide"></div>
 
   <div class="row hide" id="nav">
-    <button class="small" id="navback">← К результатам поиска</button>
-    <button class="small" id="navhome">⌂ На главную</button>
-    <button class="small" id="navfav">★ Избранное</button>
-    <button class="small" id="navrestart">↻ Перезапустить</button>
+    <button class="small" id="navback">← Back to results</button>
+    <button class="small" id="navhome">⌂ Home</button>
+    <button class="small" id="navfav">★ Favorites</button>
+    <button class="small" id="navrestart">↻ Restart</button>
   </div>
 
   <div id="toast"></div>
@@ -218,37 +218,37 @@
   <div id="card" class="panel hide"></div>
 
   <div id="favpanel" class="panel hide">
-    <h3 class="sec" style="margin-top:0">Моё избранное</h3>
+    <h3 class="sec" style="margin-top:0">My favorites</h3>
     <div class="links" style="margin-bottom:12px">
-      <a href="#" id="favback">← К результатам поиска</a>
-      <a href="#" id="favclose">✕ Закрыть</a>
+      <a href="#" id="favback">← Back to results</a>
+      <a href="#" id="favclose">✕ Close</a>
     </div>
     <div class="tabs" id="favtabs"></div>
     <div class="tabs" id="favkinds"></div>
     <div id="favlist"></div>
     <div class="favbar">
-      <button class="small" id="exp">Экспорт JSON</button>
-      <button class="small" id="impbtn">Импорт JSON</button>
+      <button class="small" id="exp">Export JSON</button>
+      <button class="small" id="impbtn">Import JSON</button>
       <select id="impmode">
-        <option value="merge">добавить к текущим</option>
-        <option value="replace">заменить всё</option>
+        <option value="merge">merge with current</option>
+        <option value="replace">replace all</option>
       </select>
       <input type="file" id="impfile" accept=".json,application/json" class="hide">
-      <button class="small" id="fixfav">Опознать фильмы</button>
-      <button class="small" id="synctest">Проверить сервер</button>
+      <button class="small" id="fixfav">Resolve titles</button>
+      <button class="small" id="synctest">Check server</button>
       <span class="tip" style="margin:0" id="syncinfo"></span>
-      <span class="tip" style="margin:0">База хранится в браузере. Экспорт всегда сохраняет favorites.json — держи его в облачной папке и просто перетаскивай файл в окно на другом устройстве</span>
+      <span class="tip" style="margin:0">The list is stored in your browser. Export always writes favorites.json - keep it in a cloud folder and drop the file into this window on another device</span>
     </div>
   </div>
 
   <div class="favbar" style="border:0">
-    <span class="tip" style="margin:0">Ответы кэшируются на 24 часа.</span>
-    <button class="small" id="clear">Сбросить кэш</button>
+    <span class="tip" style="margin:0">Responses are cached for 24 hours.</span>
+    <button class="small" id="clear">Clear cache</button>
   </div>
 </div>
 
 <script>
-const CATS = ["Буду смотреть", "Под вопросом", "Любимое", "Просмотрено"];
+const CATS = ["Want to watch", "Maybe", "Loved", "Watched"];
 const PROXIES = [
   u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u),
   u => "https://corsproxy.io/?" + encodeURIComponent(u),
@@ -257,20 +257,20 @@ const PROXIES = [
   u => "https://r.jina.ai/" + u
 ];
 const WATCH_SITES = [
-  ["HDrezka",      "https://rezka.ag/search/?do=search&subaction=search&q=",            "всё"],
-  ["Kinogo",       "https://kinogo.biz/index.php?do=search&subaction=search&story=",     "всё"],
-  ["Seasonvar",    "https://seasonvar.ru/search?q=",                                     "сериалы"],
-  ["Filmix",       "https://filmix.ac/search/",                                          "всё"],
-  ["Lordserial",   "https://www.google.com/search?q=site%3Alordserial.run+",          "сериалы"],
-  ["Google",       "https://www.google.com/search?q=",                                  "поиск"],
-  ["Яндекс",      "https://yandex.ru/search/?text=",                                     "поиск"]
+  ["HDrezka",      "https://rezka.ag/search/?do=search&subaction=search&q=",            "all"],
+  ["Kinogo",       "https://kinogo.biz/index.php?do=search&subaction=search&story=",     "all"],
+  ["Seasonvar",    "https://seasonvar.ru/search?q=",                                     "series"],
+  ["Filmix",       "https://filmix.ac/search/",                                          "all"],
+  ["Lordserial",   "https://www.google.com/search?q=site%3Alordserial.run+",          "series"],
+  ["Google",       "https://www.google.com/search?q=",                                  "search"],
+  ["Yandex",      "https://yandex.ru/search/?text=",                                     "search"]
 ];
-const HINT = "Ссылки открывают поиск по этому названию прямо на сайте и работают всегда, даже если рейтинги не загрузились.";
-const FAILMSG = "Рейтинги получить не удалось (сайт или прокси недоступны), но ссылки для просмотра ниже работают.";
+const HINT = "These links open a search for this title on each site and always work, even if the ratings failed to load.";
+const FAILMSG = "Could not fetch the ratings (source or proxy unavailable), but the watch links below still work.";
 const TTL = 24 * 3600 * 1000;
 const FAV_KEY = "movieRatings.favorites.v2";
 
-let currentCard = null, favTab = "Все";
+let currentCard = null, favTab = "All";
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? "" : s)
   .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -285,7 +285,7 @@ function slugify(t, sep){
     .replace(/[^a-z0-9]+/g, sep).replace(new RegExp("^"+sep+"+|"+sep+"+$","g"), "");
 }
 
-// ---------------------------------------------------------- кэш и запросы
+// ---------------------------------------------------------- cache and requests
 function cacheGet(k){
   try{
     const raw = localStorage.getItem("mr:" + k);
@@ -301,8 +301,8 @@ function cacheSet(k, data){
 
 const REQ_TIMEOUT = 7000;
 
-// Все прокси стартуют одновременно — побеждает тот, кто ответил первым.
-// эти источники разрешают браузеру запрос напрямую — прокси им только вредят
+// All proxies start at once - the fastest response wins.
+// these sources allow direct browser requests - a proxy only hurts them
 const DIRECT_HOSTS = [
   "query.wikidata.org",
   "www.wikidata.org",
@@ -330,11 +330,11 @@ async function fetchOnce(target, asJson){
 }
 
 async function grab(url, asJson){
-  // шаг 1: честный прямой запрос туда, где он разрешён
+  // step 1: honest direct request where it is allowed
   if(isDirectHost(url)){
     try{ return await fetchOnce(url, asJson); }catch(e){}
   }
-  // шаг 2: гонка прокси для всего остального
+  // step 2: proxy race for everything else
   const start = Number($("#proxy").value || 0);
   const order = PROXIES.map((_, i) => PROXIES[(start + i) % PROXIES.length]);
   const attempt = p => fetchOnce(p(url), asJson);
@@ -347,11 +347,11 @@ async function grab(url, asJson){
   return null;
 }
 
-// ---------------------------------------------------------- поиск
-// ---------------------------------------------- похожесть ответа на запрос
+// ---------------------------------------------------------- search
+// ---------------------------------------------- how well a result matches the query
 var RU_SRC = "\u0430\u0431\u0432\u0433\u0434\u0435\u0451\u0436\u0437\u0438\u0439\u043a\u043b\u043c\u043d\u043e\u043f\u0440\u0441\u0442\u0443\u0444\u0445\u0446\u0447\u0448\u0449\u044a\u044b\u044c\u044d\u044e\u044f";
 var RU_LAT = ["a","b","v","g","d","e","e","zh","z","i","y","k","l","m","n","o","p","r","s","t","u","f","kh","ts","ch","sh","sch","","y","","e","yu","ya"];
-const NOMATCH = "\u041d\u0438\u0447\u0435\u0433\u043e \u043f\u043e\u0445\u043e\u0436\u0435\u0433\u043e \u043d\u0435 \u043d\u0430\u0448\u043b\u043e\u0441\u044c. \u041f\u0440\u043e\u0432\u0435\u0440\u044c \u043d\u0430\u043f\u0438\u0441\u0430\u043d\u0438\u0435 \u2014 \u0441\u0441\u044b\u043b\u043a\u0438 \u0434\u043b\u044f \u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440\u0430 \u043d\u0438\u0436\u0435 \u0440\u0430\u0431\u043e\u0442\u0430\u044e\u0442.";
+const NOMATCH = "Nothing similar found. Check the spelling - the watch links below still work.";
 let lastSearchRaw = false;
 function translitRu(s){
   const src = String(s == null ? "" : s).toLowerCase();
@@ -447,7 +447,7 @@ async function wdTitleSearch(q, limit){
       year: ym ? parseInt(ym[1], 10) : null, years: ym ? ym[1] : "",
       series: kinds.some(k => SERIES_IDS.indexOf(k) >= 0),
       poster: "", kp_score: null,
-      stars: "\u0412\u0438\u043a\u0438\u0434\u0430\u043d\u043d\u044b\u0435", src: "Wikidata"
+      stars: "Wikidata", src: "Wikidata"
     });
     if(out.length >= limit) break;
   }
@@ -494,7 +494,7 @@ async function kpSuggest(q, limit){
       year: ym ? parseInt(ym[1], 10) : null, years: years,
       series: /\d{4}\s*[-\u2013]/.test(years),
       poster: it.poster || it.posterUrl || "", kp_score: rating,
-      stars: it.descr || it.description || "", src: "Кинопоиск"
+      stars: it.descr || it.description || "", src: "Kinopoisk"
     });
     if(out.length >= limit) break;
   }
@@ -524,7 +524,7 @@ async function imdbSuggest(q, limit){
   return out;
 }
 
-// поиск по названию в открытом каталоге Cinemeta (без прокси, сразу с постерами)
+// title search in the open Cinemeta catalog (no proxy, posters included)
 async function cinemetaSearch(q, limit){
   if(!q) return [];
   const one = async function(kind){
@@ -572,13 +572,13 @@ async function tvmazeSuggest(q, limit){
   return out;
 }
 
-// заглушка вместо названия: «tt123456» или «Кинопоиск #123»
+// placeholder instead of a title: tt123456 or Kinopoisk #123»
 function isStubTitle(s){
   const v = String(s || "").trim();
-  return !v || /^tt\d+$/.test(v) || /^Кинопоиск\s*#\d+$/.test(v);
+  return !v || /^tt\d+$/.test(v) || /^Kinopoisk\s*#\d+$/.test(v);
 }
 
-// Викиданные знают связь кодов Кинопоиска и IMDb и отдают названия на двух языках
+// Wikidata links Kinopoisk ids to IMDb ids and returns titles in two languages
 async function wikidata(prop, value){
   const out = {titleRu: "", titleEn: "", imdb_id: null, kp_id: null, year: null};
   if(!value) return out;
@@ -628,10 +628,10 @@ async function smartSearch(q){
     return [{key: ref.imdb_id, imdb_id: ref.imdb_id, kp_id: wd.kp_id || null, title: name,
              orig_title: en || name, year: sg.year || cm.year || wd.year || null, years: "",
              series: sg.series || cm.series, poster: sg.poster || cm.poster || "",
-             kp_score: null, stars: "ссылка IMDb", src: "IMDb"}];
+             kp_score: null, stars: "from IMDb", src: "IMDb"}];
   }
   if(ref && ref.kp_id){
-    // страница Кинопоиска часто закрыта защитой, поэтому спрашиваем ещё и Викиданные
+    // the Kinopoisk page is often bot-protected, so we ask Wikidata as well
     const [info, wd] = await Promise.all([kpPageTitle(ref.kp_id), wikidataByKp(ref.kp_id)]);
     const name = info.title || wd.titleRu || wd.titleEn || "";
     if(name){
@@ -645,17 +645,17 @@ async function smartSearch(q){
     if(name || wd.imdb_id){
       const cm = wd.imdb_id ? await cinemeta(wd.imdb_id, info.series) : null;
       return [{key: "kp:" + ref.kp_id, kp_id: ref.kp_id, imdb_id: wd.imdb_id || null,
-               title: name || (cm && cm.title) || ("Кинопоиск #" + ref.kp_id),
+               title: name || (cm && cm.title) || ("Kinopoisk #" + ref.kp_id),
                orig_title: wd.titleEn || (cm && cm.title) || "",
                year: wd.year || (cm && cm.year) || null, years: "",
                series: info.series || (cm && cm.series) || false,
                poster: (cm && cm.poster) || kpPoster(ref.kp_id),
-               kp_score: null, stars: "ссылка Кинопоиска", src: "Кинопоиск"}];
+               kp_score: null, stars: "from Kinopoisk", src: "Kinopoisk"}];
     }
     return [{key: "kp:" + ref.kp_id, kp_id: ref.kp_id, imdb_id: null,
-             title: "Кинопоиск #" + ref.kp_id, orig_title: "",
+             title: "Kinopoisk #" + ref.kp_id, orig_title: "",
              year: null, years: "", series: info.series, poster: kpPoster(ref.kp_id),
-             kp_score: null, stars: "ссылка Кинопоиска", src: "Кинопоиск"}];
+             kp_score: null, stars: "from Kinopoisk", src: "Kinopoisk"}];
   }
 
   const ck = "search3:" + q.toLowerCase();
@@ -684,21 +684,21 @@ async function smartSearch(q){
   }
   lastSearchRaw = pool.length > 0;
   const out = rankByQuery(pool, q, 8);
-  // пустой результат — это неудача источника, а не ответ. Запоминать его нельзя
+  // an empty result is a source failure, not an answer. It must not be cached
   if(out.length) cacheSet(ck, out);
   return out;
 }
 
-// ---------------------------------------------------------- источники
+// ---------------------------------------------------------- sources
 function humanDuration(iso){
   const m = String(iso || "").match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
   if(!m) return "";
-  return [m[1] ? m[1] + " ч" : "", m[2] ? m[2] + " мин" : ""].filter(Boolean).join(" ");
+  return [m[1] ? m[1] + " h" : "", m[2] ? m[2] + " min" : ""].filter(Boolean).join(" ");
 }
 
 function isTtCode(s){ return /^tt\d+$/.test(String(s || "").trim()); }
 
-// подсказка IMDb по коду tt… — название, год, постер
+// IMDb suggest by tt id - title, year, poster
 async function imdbById(id){
   const out = {title: "", year: null, poster: "", series: false};
   if(!id) return out;
@@ -717,7 +717,7 @@ async function imdbById(id){
   return out;
 }
 
-// открытый каталог Cinemeta: по tt… даёт описание, постер и рейтинг IMDb
+// open Cinemeta catalog: by tt id it returns description, poster and IMDb rating IMDb
 async function cinemeta(id, isSeries){
   const out = {title: "", year: null, poster: "", description: "", rating: null,
                genres: [], director: "", actors: [], duration: "", series: false};
@@ -793,7 +793,7 @@ async function getImdbReview(id){
   text = text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   if(!text) return null;
   const who = page.match(/"authorNickName":"(.*?)"/);
-  return {text: text.slice(0, 650), author: who ? who[1] : "пользователь IMDb",
+  return {text: text.slice(0, 650), author: who ? who[1] : "reviewer on IMDb",
           source: "IMDb", url: url};
 }
 
@@ -835,7 +835,7 @@ async function getMc(title, year, isSeries){
 }
 
 async function getKp(title, year, kpId, kpScore){
-  const res = {source: "Кинопоиск", score: kpScore == null ? null : kpScore, score_max: 10,
+  const res = {source: "Kinopoisk", score: kpScore == null ? null : kpScore, score_max: 10,
                votes: null, poster: "",
                url: kpId ? ("https://www.kinopoisk.ru/film/" + kpId + "/")
                          : ("https://www.kinopoisk.ru/index.php?kp_query=" + encodeURIComponent(title || "")),
@@ -854,18 +854,18 @@ async function getKp(title, year, kpId, kpScore){
 }
 
 function watchLinks(titleRu, titleEn, year, isSeries){
-  const name = (titleRu || titleEn || "").trim();
+  const name = (titleEn || titleRu || "").trim();
   if(!name) return [];
   const out = [];
   WATCH_SITES.forEach(function(row){
     const label = row[0], base = row[1], kind = row[2];
-    if(kind === "сериалы" && isSeries === false) return;
+    if(kind === "series" && isSeries === false) return;
     let q = name;
-    if(kind === "поиск") q = name + " " + (year || "") + " смотреть онлайн";
+    if(kind === "search") q = name + " " + (year || "") + " watch online";
     out.push({name: label, kind: kind, url: base + encodeURIComponent(q.trim())});
   });
   if(titleEn && titleEn.toLowerCase() !== name.toLowerCase()){
-    out.push({name: "HDrezka (оригинал)", kind: "всё",
+    out.push({name: "HDrezka (original)", kind: "all",
               url: "https://rezka.ag/search/?do=search&subaction=search&q=" + encodeURIComponent(titleEn)});
   }
   return out;
@@ -883,7 +883,7 @@ function kpIdFromUrl(u){
   return m ? m[1] : null;
 }
 
-// если IMDb не отдал описание/постер — берём их со страницы Кинопоиска
+// if IMDb returned no description or poster, take them from the Kinopoisk page
 async function kpDetails(kpId, isSeries){
   const out = {description: "", poster: ""};
   if(!kpId) return out;
@@ -906,20 +906,20 @@ function kpPoster(kpId){
 
 function ytLink(title, year){
   return "https://www.youtube.com/results?search_query="
-    + encodeURIComponent(((title || "") + " " + (year || "") + " трейлер").trim());
+    + encodeURIComponent(((title || "") + " " + (year || "") + " trailer").trim());
 }
 
 const RATING_SITES = [
   ["IMDb",            "https://www.imdb.com/find/?q="],
   ["Rotten Tomatoes", "https://www.rottentomatoes.com/search?search="],
   ["Metacritic",      "https://www.metacritic.com/search/"],
-  ["Кинопоиск",       "https://www.kinopoisk.ru/index.php?kp_query="]
+  ["Kinopoisk",       "https://www.kinopoisk.ru/index.php?kp_query="]
 ];
 
 function ratingLinks(title, year){
   const name = (title || "").trim();
   if(!name) return [];
-  return RATING_SITES.map(r => ({name: r[0] + " (поиск)",
+  return RATING_SITES.map(r => ({name: r[0] + " (search)",
     url: r[1] + encodeURIComponent(name)}));
 }
 
@@ -932,15 +932,15 @@ function watchPanel(titleRu, titleEn, year, isSeries, hint){
     .map(r => '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">' +
       esc(r.name) + '</a>').join("");
   $("#watchnow").innerHTML =
-    '<h3 class="sec" style="margin-top:0">Где смотреть: ' + esc(titleRu || titleEn) +
+    '<h3 class="sec" style="margin-top:0">Where to watch: ' + esc(titleEn || titleRu) +
     '</h3><div class="links">' + html + '</div>' +
-    '<h3 class="sec">Проверить рейтинги</h3><div class="links">' + rhtml + '</div>' +
+    '<h3 class="sec">Check ratings</h3><div class="links">' + rhtml + '</div>' +
     (hint ? '<div class="tip">' + esc(hint) + '</div>' : "");
   $("#watchnow").classList.remove("hide");
 }
 
 
-// ------------------------------------------------- копирование ссылок в буфер
+// ------------------------------------------------- copying links to the clipboard
 let toastTimer = null;
 function toast(msg){
   const el = $("#toast");
@@ -951,7 +951,7 @@ function toast(msg){
 }
 
 function copyText(text){
-  // на file:// современный clipboard API недоступен, поэтому есть запасной способ
+  // on file:// the modern clipboard API is unavailable, so there is a fallback
   try{
     if(navigator.clipboard && window.isSecureContext){
       navigator.clipboard.writeText(text);
@@ -972,36 +972,36 @@ function copyText(text){
   }catch(e){ return false; }
 }
 
-// клик по любой ссылке сайта — адрес сразу уходит в буфер обмена
+// a click on any site link copies the address to the clipboard
 document.addEventListener("click", function(ev){
   const a = ev.target.closest ? ev.target.closest(".links a") : null;
   if(!a || !a.href) return;
   const ok = copyText(a.href);
-  toast(ok ? "Ссылка скопирована в буфер обмена" : "Не удалось скопировать ссылку");
+  toast(ok ? "Link copied to clipboard" : "Could not copy the link");
 }, true);
 
 async function resolveByLink(){
   const v = (($("#linkin") || {}).value || "").trim();
-  if(!v){ toast("Сначала вставь ссылку на фильм"); return; }
+  if(!v){ toast("Paste a link to the title first"); return; }
   if(!parseInputUrl(v)){
-    toast("Нужна ссылка вида kinopoisk.ru/film/123 или imdb.com/title/tt1234567");
+    toast("Use a link like kinopoisk.ru/film/123 or imdb.com/title/tt1234567");
     return;
   }
   $("#q").value = v;
   await run();
-  toast("Фильм опознан — теперь его можно добавить в Избранное");
+  toast("Title resolved - now it can be added to Favorites");
 }
 
-// год кандидата: источники кладут его то в year, то в строку years
+// candidate year: sources put it either in year or in the years string years
 function candYear(c){
   if(c.year) return parseInt(c.year, 10);
   const m = String(c.years || "").match(/(\d{4})/);
   return m ? parseInt(m[1], 10) : null;
 }
 
-// подпись для склейки дубликатов.
-// Главное правило: без года два одноимённых фильма — это разные фильмы,
-// их нельзя считать одним и терять один из них в списке.
+// signature used to merge duplicates.
+// Key rule: without a year, two films with the same title are different films,
+// they must not be merged, or one of them disappears from the list.
 function candSig(c){
   const name = slugify(c.orig_title || c.title || "");
   const y = candYear(c);
@@ -1011,14 +1011,14 @@ function candSig(c){
   return "n|" + name + "|" + (c.src || "");
 }
 
-// названия считаются одним и тем же только при полном или префиксном совпадении
+// titles are treated as equal only on a full or prefix match
 function titleClose(a, b){
   const x = slugify(a || ""), y = slugify(b || "");
   if(!x || !y) return false;
   return x === y || x.indexOf(y) === 0 || y.indexOf(x) === 0;
 }
 
-// ключ записи в Избранном
+// key of a favorites entry
 function favKeyFor(card){
   if(card.imdb_id) return String(card.imdb_id);
   if(card.kp_id) return "kp:" + card.kp_id;
@@ -1029,7 +1029,7 @@ function favKeyFor(card){
 function blankCard(q){
   return {key: "q:" + q, imdb_id: null, kp_id: null, title: q, orig_title: "", year: null,
     kind: "", series: true, genres: [], duration: "", director: "", actors: [],
-    description: "Рейтинги сейчас недоступны, но ссылки на просмотр и трейлер ниже работают.",
+    description: "Ratings are unavailable right now, but the watch and trailer links below work.",
     poster: "", trailer: ytLink(q, ""), trailer_search: ytLink(q, ""),
     ratings: [], average: null, reviews: [], sources: [],
     watch: watchLinks(q, "", null, true)};
@@ -1057,8 +1057,8 @@ function withBudget(p, ms, fallback){
   });
 }
 let openSeq = 0;
-const WAITMSG = "\u041a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 \u043e\u0442\u043a\u0440\u044b\u0442\u0430 \u2014 \u0434\u043e\u0433\u0440\u0443\u0436\u0430\u044e \u043e\u0441\u0442\u0430\u043b\u044c\u043d\u044b\u0435 \u0440\u0435\u0439\u0442\u0438\u043d\u0433\u0438\u2026";
-const PARTMSG = "\u0427\u0430\u0441\u0442\u044c \u0440\u0435\u0439\u0442\u0438\u043d\u0433\u043e\u0432 \u043d\u0435 \u043f\u0440\u0438\u0448\u043b\u0430 \u2014 \u043f\u043e\u043a\u0430\u0437\u044b\u0432\u0430\u044e \u0442\u043e, \u0447\u0442\u043e \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u044c.";
+const WAITMSG = "Card opened - loading the remaining ratings\u2026";
+const PARTMSG = "Some ratings did not arrive - showing what we could get.";
 
 async function buildCard(cand, onPartial){
   const ck = "card:" + cand.key;
@@ -1068,7 +1068,7 @@ async function buildCard(cand, onPartial){
   let imdbId = cand.imdb_id;
   let base = cand;
 
-  // код Кинопоиска связан с кодом IMDb в Викиданных — берём оттуда и связь, и названия
+  // the Kinopoisk id is linked to the IMDb id in Wikidata - we take both the link and the titles from there
   if(cand.kp_id && (!imdbId || isStubTitle(cand.title))){
     const wd = await withBudget(wikidataByKp(cand.kp_id), 3500, {});
     if(!imdbId && wd.imdb_id) imdbId = wd.imdb_id;
@@ -1081,7 +1081,7 @@ async function buildCard(cand, onPartial){
     }
   }
 
-  // если пришли с Кинопоиска — ищем IMDb по ОРИГИНАЛЬНОМУ названию
+  // coming from Kinopoisk: search IMDb by the ORIGINAL title
   if(!imdbId && !isStubTitle(base.orig_title || base.title)){
     const probe = base.orig_title || base.title;
     const found = await withBudget(imdbSuggest(probe, 6), 3500, []);
@@ -1089,7 +1089,7 @@ async function buildCard(cand, onPartial){
     for(const c of found){
       const cy = candYear(c);
       if(wantYear && cy && Math.abs(cy - wantYear) > 1) continue;
-      // без этой проверки прицеплялся первый однофамилец — чужой фильм
+      // without this check the first namesake was attached - a different film
       if(!titleClose(c.orig_title || c.title, probe)) continue;
       imdbId = c.imdb_id;
       break;
@@ -1116,7 +1116,7 @@ async function buildCard(cand, onPartial){
     poster: "", description: "", director: "", actors: [], trailer: "", duration: "", series: false};
   const meta0 = both[1];
 
-  // запасные источники: если страница IMDb не отдалась через прокси
+  // fallback sources if the IMDb page did not load through the proxy
   const needMeta = imdbId && (!info.title || imdbRating.score == null ||
                               !info.poster || !info.description);
   const meta = needMeta ? (meta0 || (await cinemeta(imdbId, info.series || base.series)))
@@ -1134,7 +1134,7 @@ async function buildCard(cand, onPartial){
   if(!info.year) info.year = meta.year;
   if(meta.series) info.series = true;
 
-  // голый код tt… никогда не должен быть названием
+  // a bare tt id must never become the title
   const baseTitle = isStubTitle(base.title) ? "" : base.title;
   const baseOrig = isStubTitle(base.orig_title) ? "" : base.orig_title;
   let titleRu = baseTitle || info.title;
@@ -1142,14 +1142,14 @@ async function buildCard(cand, onPartial){
   const year = info.year || base.year;
   const isSeries = info.series || base.series;
 
-  // русское название из Викиданных, если его всё ещё нет
+  // Russian title from Wikidata if it is still missing
   if(imdbId && (isStubTitle(titleRu) || !hasCyr(titleRu || ""))){
     const wd2 = await withBudget(wikidataByImdb(imdbId), 3000, {});
     if(wd2.titleRu) titleRu = wd2.titleRu;
     if(!base.kp_id && wd2.kp_id) base = Object.assign({}, base, {kp_id: wd2.kp_id});
   }
 
-  // под английское название подтягиваем русское с Кинопоиска
+  // for an English title pull the Russian one from Kinopoisk
   if(!base.kp_id && titleEn && !hasCyr(titleRu || "")){
     let kpc = [];
     kpc = await withBudget(kpSuggest(titleEn, 6), 3500, []);
@@ -1166,14 +1166,14 @@ async function buildCard(cand, onPartial){
     try{
       onPartial({
         key: cand.key, imdb_id: imdbId, kp_id: base.kp_id || null,
-        title: titleRu || titleEn || "\u0411\u0435\u0437 \u043d\u0430\u0437\u0432\u0430\u043d\u0438\u044f",
+        title: titleEn || titleRu || "Untitled",
         orig_title: titleEn, year: year,
-        kind: isSeries ? "\u0421\u0435\u0440\u0438\u0430\u043b" : "\u0424\u0438\u043b\u044c\u043c",
+        kind: isSeries ? "Series" : "Movie",
         series: isSeries, genres: info.genres, duration: info.duration,
         director: info.director, actors: info.actors, description: info.description,
         poster: info.poster || base.poster || kpPoster(base.kp_id),
-        trailer: info.trailer || ytLink(titleRu || titleEn, year),
-        trailer_search: ytLink(titleRu || titleEn, year),
+        trailer: info.trailer || ytLink(titleEn || titleRu, year),
+        trailer_search: ytLink(titleEn || titleRu, year),
         ratings: [imdbRating], average: normalize(imdbRating), reviews: [], sources: [],
         partial: true, watch: watchLinks(titleRu, titleEn, year, isSeries)
       });
@@ -1184,20 +1184,20 @@ async function buildCard(cand, onPartial){
     url: "https://www.rottentomatoes.com/search?search=" + encodeURIComponent(titleEn || ""), review: null};
   const mcFail = {source: "Metacritic", score: null, score_max: 100, user: null,
     url: "https://www.metacritic.com/search/" + encodeURIComponent(titleEn || "") + "/", review: null};
-  const kpFail = {source: "\u041a\u0438\u043d\u043e\u043f\u043e\u0438\u0441\u043a",
+  const kpFail = {source: "Kinopoisk",
     score: base.kp_score == null ? null : base.kp_score, score_max: 10, votes: null, poster: "",
     url: base.kp_id ? ("https://www.kinopoisk.ru/film/" + base.kp_id + "/")
-                    : ("https://www.kinopoisk.ru/index.php?kp_query=" + encodeURIComponent(titleRu || titleEn || "")),
+                    : ("https://www.kinopoisk.ru/index.php?kp_query=" + encodeURIComponent(titleEn || titleRu || "")),
     review: null};
   const [rt, mc, kp, review] = await Promise.all([
     withBudget(getRt(titleEn, year), 6000, rtFail),
     withBudget(getMc(titleEn, year, isSeries), 6000, mcFail),
-    withBudget(getKp(titleRu || titleEn, year, base.kp_id, base.kp_score), 5000, kpFail),
+    withBudget(getKp(titleEn || titleRu, year, base.kp_id, base.kp_score), 5000, kpFail),
     withBudget(getImdbReview(imdbId), 6000, null)
   ]);
   imdbRating.review = review;
 
-  // постера нет — всё равно добираем описание и рейтинги
+  // no poster - still fetch description and ratings
   const kpIdFinal = base.kp_id || kpIdFromUrl(kp.url);
   let descr = info.description;
   let poster = info.poster || base.poster || kp.poster || "";
@@ -1213,54 +1213,54 @@ async function buildCard(cand, onPartial){
 
   const card = {
     key: cand.key, imdb_id: imdbId, kp_id: kpIdFinal,
-    title: titleRu || titleEn || "Без названия", orig_title: titleEn, year: year,
-    kind: isSeries ? "Сериал" : "Фильм", series: isSeries,
+    title: titleEn || titleRu || "Untitled", orig_title: titleEn, year: year,
+    kind: isSeries ? "Series" : "Movie", series: isSeries,
     genres: info.genres, duration: info.duration, director: info.director,
     actors: info.actors, description: descr,
     poster: poster,
-    trailer: info.trailer || ytLink(titleRu || titleEn, year),
-    trailer_search: ytLink(titleRu || titleEn, year),
+    trailer: info.trailer || ytLink(titleEn || titleRu, year),
+    trailer_search: ytLink(titleEn || titleRu, year),
     ratings: ratings,
     average: nums.length ? Math.round(nums.reduce((a,b) => a+b, 0) / nums.length) : null,
     reviews: ratings.map(r => r.review).filter(Boolean).slice(0, 2),
     sources: ratings.filter(r => r.url).map(r => ({name: r.source, url: r.url})),
     watch: watchLinks(titleRu, titleEn, year, isSeries)
   };
-  // карточку без единого рейтинга и без описания тоже не запоминаем:
-  // через минуту источники могут ответить, а суточный кэш будет держать пустоту
+  // a card without a single rating and without a description is not cached either::
+  // the sources may answer a minute later, while a 24h cache would keep the emptiness
   if(nums.length || card.description || card.poster) cacheSet(ck, card);
   return card;
 }
 
-// ---------------------------------------------------------- рендер
+// ---------------------------------------------------------- render
 function renderCard(c){
   const tiles = c.ratings.map(function(r){
     const v = (r.score == null || r.score === "") ? null : Number(r.score);
     const pct = v == null ? null : (r.score_max === 10 ? v * 10 : v);
-    const extra = [r.audience != null ? "зрители " + r.audience + "%" : "",
-                   r.user != null ? "юзеры " + r.user : "",
-                   r.votes ? Number(r.votes).toLocaleString("ru-RU") + " голосов" : ""]
+    const extra = [r.audience != null ? "audience " + r.audience + "%" : "",
+                   r.user != null ? "users " + r.user : "",
+                   r.votes ? Number(r.votes).toLocaleString("en-US") + " votes" : ""]
                   .filter(Boolean).join(" · ");
     return '<div class="score"><div class="l">' + esc(r.source) + '</div>' +
       '<div class="v ' + cls(pct) + '">' +
-      (v == null ? "нет данных" : (r.score_max === 100 ? v + "%" : v)) +
+      (v == null ? "no data" : (r.score_max === 100 ? v + "%" : v)) +
       '</div><div class="x">' + esc(extra || " ") + '</div></div>';
   }).join("");
 
   const avg = c.average == null ? "" :
-    '<div class="score avg"><div class="l">Среднее</div><div class="v ' + cls(c.average) + '">' +
-    c.average + '</div><div class="x">из 100</div></div>';
+    '<div class="score avg"><div class="l">Average</div><div class="v ' + cls(c.average) + '">' +
+    c.average + '</div><div class="x">of 100</div></div>';
 
   const facts = [
-    c.director ? '<div><b>Режиссёр:</b> ' + esc(c.director) + '</div>' : "",
-    (c.actors && c.actors.length) ? '<div><b>В ролях:</b> ' + esc(c.actors.join(", ")) + '</div>' : "",
-    c.duration ? '<div><b>Длительность:</b> ' + esc(c.duration) + '</div>' : ""
+    c.director ? '<div><b>Director:</b> ' + esc(c.director) + '</div>' : "",
+    (c.actors && c.actors.length) ? '<div><b>Cast:</b> ' + esc(c.actors.join(", ")) + '</div>' : "",
+    c.duration ? '<div><b>Runtime:</b> ' + esc(c.duration) + '</div>' : ""
   ].join("");
 
   const rv = (c.reviews || [])[0];
   const quote = rv ? '<blockquote>«' + esc(rv.text) + '»<span class="who">— ' + esc(rv.author) +
     ', ' + esc(rv.source) + ' · <a href="' + esc(rv.url) +
-    '" target="_blank" style="color:var(--accent)">источник</a></span></blockquote>' : "";
+    '" target="_blank" style="color:var(--accent)">source</a></span></blockquote>' : "";
 
   const watch = (c.watch || []).map(w => '<a href="' + esc(w.url) + '" target="_blank" rel="noopener">' +
     esc(w.name) + ' <span class="k">' + esc(w.kind) + '</span></a>').join("");
@@ -1269,25 +1269,25 @@ function renderCard(c){
     esc(s.name) + '</a>').join("");
   const opts = CATS.map(x => '<option value="' + esc(x) + '">' + esc(x) + '</option>').join("");
 
-  // если фильм не опознан — помогаем привязать его в два клика
+  // if the title is unresolved, help to link it in two clicks
   const resolveBox = isResolved(c) ? "" :
-    '<h3 class="sec">Привязать к фильму</h3>' +
-    '<div class="tip" style="margin:0 0 10px">Запрос не опознан, поэтому в Избранное он не сохранится. ' +
-      'Открой Кинопоиск или IMDb кнопкой ниже, открой там страницу нужного фильма, ' +
-      'скопируй адрес из адресной строки браузера и вставь сюда.</div>' +
+    '<h3 class="sec">Link to a title</h3>' +
+    '<div class="tip" style="margin:0 0 10px">The query was not resolved, so it cannot be saved to Favorites. ' +
+      'Open IMDb or Kinopoisk with the button below, find the page of the title you mean, ' +
+      'copy the address from the browser address bar and paste it here.</div>' +
     '<div class="links" style="margin-bottom:10px">' +
       '<a href="https://www.kinopoisk.ru/index.php?kp_query=' + encodeURIComponent(c.title) +
-        '" target="_blank" rel="noopener">Найти на Кинопоиске</a>' +
+        '" target="_blank" rel="noopener">Search on Kinopoisk</a>' +
       '<a href="https://www.imdb.com/find/?q=' + encodeURIComponent(c.title) +
-        '" target="_blank" rel="noopener">Найти на IMDb</a>' +
+        '" target="_blank" rel="noopener">Search on IMDb</a>' +
     '</div>' +
     '<div class="favbar" style="margin-bottom:6px">' +
-      '<input id="linkin" placeholder="Вставь ссылку: kinopoisk.ru/film/123 или imdb.com/title/tt123">' +
-      '<button class="primary small" id="linkgo">Опознать</button></div>';
+      '<input id="linkin" placeholder="Paste a link: kinopoisk.ru/film/123 or imdb.com/title/tt123">' +
+      '<button class="primary small" id="linkgo">Resolve</button></div>';
 
   $("#card").innerHTML = '<div class="card' + (c.poster ? '' : ' nopost') + '">' +
     (c.poster ? '<div class="poster-box">' +
-      '<img class="poster" src="' + esc(c.poster) + '" alt="Постер" onerror="this.parentNode.remove()">' +
+      '<img class="poster" src="' + esc(c.poster) + '" alt="Poster" onerror="this.parentNode.remove()">' +
     '</div>' : '') +
     '<div>' +
     '<h2>' + esc(c.title) + '</h2>' +
@@ -1298,19 +1298,19 @@ function renderCard(c){
     (c.description ? '<div class="desc">' + esc(c.description) + '</div>' : "") +
     '<div class="facts">' + facts + '</div>' +
     '<div class="links" style="margin-bottom:16px">' +
-      '<a href="' + esc(c.trailer) + '" target="_blank">▶ Смотреть трейлер</a>' +
-      '<a href="' + esc(c.trailer_search) + '" target="_blank">Трейлеры на YouTube</a></div>' +
+      '<a href="' + esc(c.trailer) + '" target="_blank">▶ Watch trailer</a>' +
+      '<a href="' + esc(c.trailer_search) + '" target="_blank">Trailers on YouTube</a></div>' +
     quote +
-    (watch ? '<h3 class="sec">Где посмотреть</h3><div class="links">' + watch + '</div>' : "") +
-    (src ? '<h3 class="sec">Источники рейтингов</h3><div class="links">' + src + '</div>' : "") +
+    (watch ? '<h3 class="sec">Where to watch</h3><div class="links">' + watch + '</div>' : "") +
+    (src ? '<h3 class="sec">Rating sources</h3><div class="links">' + src + '</div>' : "") +
     resolveBox +
-    '<div class="favbar"><span>В Избранное:</span><select id="cat">' + opts + '</select>' +
-      '<button class="primary small" id="add">★ Добавить</button>' +
-      '<button class="small" id="showfav2">Открыть избранное</button>' +
+    '<div class="favbar"><span>Add to Favorites:</span><select id="cat">' + opts + '</select>' +
+      '<button class="primary small" id="add">★ Add</button>' +
+      '<button class="small" id="showfav2">Open favorites</button>' +
       '<span id="favmsg" class="tip" style="margin:0"></span></div>' +
     '</div></div>';
   $("#card").classList.remove("hide");
-  // верхняя панель нужна только пока карточки нет: убираем повторы
+  // the top panel is only needed while there is no card: avoid duplicates
   $("#watchnow").classList.add("hide");
   $("#cands").classList.add("hide");
   updateNav();
@@ -1324,9 +1324,9 @@ function renderCard(c){
   $("#showfav2").onclick = () => { renderFav(); $("#favpanel").classList.remove("hide"); };
 }
 
-// ---------------------------------------------------------- избранное (localStorage)
+// ---------------------------------------------------------- favorites (localStorage)
 
-// ------------------------------------------------- общая база на сервере (только на деплое)
+// ------------------------------------------------- shared store on the server (deployment only)
 let REMOTE = false;
 let lastSyncError = "";
 let pushTimer = null;
@@ -1341,14 +1341,14 @@ async function remoteLoad(){
   const r = await fetch(API + "?ts=" + Date.now(), {cache: "no-store"});
   const text = await r.text();
   if(!r.ok){
-    let msg = "код " + r.status;
+    let msg = "code " + r.status;
     try{ const j = JSON.parse(text); if(j.error) msg = j.error; }catch(e){}
-    if(r.status === 404) msg = "функция api/favorites не задеплоена (код 404)";
+    if(r.status === 404) msg = "the api/favorites function is not deployed (code 404)";
     throw new Error(msg);
   }
   let db = null;
-  try{ db = JSON.parse(text); }catch(e){ throw new Error("сервер вернул не JSON"); }
-  if(!db || !Array.isArray(db.items)) throw new Error("в ответе нет списка items");
+  try{ db = JSON.parse(text); }catch(e){ throw new Error("server did not return JSON"); }
+  if(!db || !Array.isArray(db.items)) throw new Error("response has no items");
   return db;
 }
 
@@ -1360,7 +1360,7 @@ async function remotePush(db){
   });
   const text = await r.text();
   if(!r.ok){
-    let msg = "код " + r.status;
+    let msg = "code " + r.status;
     try{ const j = JSON.parse(text); if(j.error) msg = j.error; }catch(e){}
     throw new Error(msg);
   }
@@ -1373,10 +1373,10 @@ function schedulePush(){
   pushTimer = setTimeout(async function(){
     try{
       await remotePush(favLoad());
-      syncNote("Общая база · сохранено");
+      syncNote("Shared store · saved");
     }catch(e){
       lastSyncError = String(e && e.message ? e.message : e);
-      syncNote("Общая база · не сохранено: " + lastSyncError);
+      syncNote("Shared store · not saved: " + lastSyncError);
     }
   }, 600);
 }
@@ -1393,7 +1393,7 @@ function mergeDbs(a, b){
 
 async function initSync(){
   if(location.protocol !== "http:" && location.protocol !== "https:"){
-    syncNote("Локальная база (файл на диске)");
+    syncNote("Local store (file on disk)");
     return;
   }
   try{
@@ -1402,11 +1402,11 @@ async function initSync(){
     REMOTE = true;
     localStorage.setItem(FAV_KEY, JSON.stringify(merged));
     renderFav();
-    syncNote("Общая база · записей: " + merged.items.length);
+    syncNote("Shared store · entries: " + merged.items.length);
     if((merged.items || []).length !== (server.items || []).length) schedulePush();
   }catch(e){
     lastSyncError = String(e && e.message ? e.message : e);
-    syncNote("Локальная база · " + lastSyncError);
+    syncNote("Local store · " + lastSyncError);
   }
 }
 
@@ -1425,11 +1425,11 @@ function favSave(db){
 }
 let autoAddCat = null;
 
-// в базу попадают только опознанные фильмы, а не поисковые фразы
+// only resolved titles go into the store, not search phrases
 function isResolved(card){
   if(!card) return false;
   if(card.imdb_id || card.kp_id) return true;
-  // кодов нет, но есть внятное название — такую карточку тоже сохраняем
+  // no ids, but a sane title - such a card is saved too
   return Boolean(card.title && !isStubTitle(card.title) &&
                  String(card.key || "").indexOf("q:") !== 0);
 }
@@ -1444,16 +1444,16 @@ async function addFav(){
   storeFav(currentCard, category);
 }
 
-// неопознанная карточка: сначала находим фильм, потом сохраняем
+// unresolved card: resolve the title first, then save
 async function resolveThenAdd(title, category){
   const name = (title || "").trim();
   if(!name) return;
-  note("Определяю фильм…");
+  note("Resolving the title…");
   let list = [];
   try{ list = await smartSearch(name); }catch(e){ list = []; }
   if(!list.length){
     note("");
-    toast("Фильм не опознан — привяжи его ссылкой внизу карточки");
+    toast("Title not resolved - link it with a URL at the bottom of the card");
     const inp = $("#linkin");
     if(inp){
       inp.scrollIntoView({behavior: "smooth", block: "center"});
@@ -1463,7 +1463,7 @@ async function resolveThenAdd(title, category){
   }
   autoAddCat = category;
   if(list.length === 1){ await open1(list[0], name); return; }
-  note("Выбери, какой именно фильм сохранить в «" + category + "»");
+  note("Choose which title to save to «" + category + "»");
   renderCands(list, name);
 }
 
@@ -1481,18 +1481,18 @@ function storeFav(card, category){
   db.items = db.items.filter(i => i.key !== entry.key);
   db.items.unshift(entry);
   favSave(db);
-  $("#favmsg").textContent = "Сохранено в «" + category + "»";
-  toast("Сохранено в «" + category + "». Кнопки возврата — вверху страницы");
+  $("#favmsg").textContent = "Saved to «" + category + "»";
+  toast("Saved to «" + category + "». The back buttons are at the top of the page");
   renderFav();
 }
 
 // favorites sub-categories by type: movies / series / documentaries
-function allTypesLabel(){ return "\u0412\u0441\u0435 \u0442\u0438\u043f\u044b"; }
-function typeFilm(){ return "\u0424\u0438\u043b\u044c\u043c\u044b"; }
-function typeSeries(){ return "\u0421\u0435\u0440\u0438\u0430\u043b\u044b"; }
-function typeDoc(){ return "\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430\u043b\u044c\u043d\u044b\u0435"; }
+function allTypesLabel(){ return "All types"; }
+function typeFilm(){ return "Movies"; }
+function typeSeries(){ return "Series"; }
+function typeDoc(){ return "Documentaries"; }
 function typeTabs(){ return [allTypesLabel(), typeFilm(), typeSeries(), typeDoc()]; }
-function emptyKindMsg(){ return "\u0412 \u044d\u0442\u043e\u043c \u0440\u0430\u0437\u0434\u0435\u043b\u0435 \u043f\u043e\u043a\u0430 \u043f\u0443\u0441\u0442\u043e."; }
+function emptyKindMsg(){ return "This section is empty for now."; }
 var favKindTab = null;
 function favItemKind(i){
   const low = (String((i && i.kind) || "") + " " +
@@ -1528,18 +1528,18 @@ function renderFav(){
   const items = db.items || [];
   const counts = {};
   items.forEach(i => counts[i.category] = (counts[i.category] || 0) + 1);
-  const tabs = ["Все"].concat(CATS);
+  const tabs = ["All"].concat(CATS);
   $("#favtabs").innerHTML = tabs.map(function(t){
-    const n = t === "Все" ? items.length : (counts[t] || 0);
+    const n = t === "All" ? items.length : (counts[t] || 0);
     return '<div class="tab' + (t === favTab ? ' on' : '') + '" data-t="' + esc(t) + '">' +
       esc(t) + ' (' + n + ')</div>';
   }).join("");
   $("#favtabs").querySelectorAll(".tab").forEach(el =>
     el.onclick = () => { favTab = el.dataset.t; renderFav(); });
 
-  const shown = favTab === "Все" ? items : items.filter(i => i.category === favTab);
+  const shown = favTab === "All" ? items : items.filter(i => i.category === favTab);
   if(!shown.length){
-    $("#favlist").innerHTML = '<div class="msg">Пока пусто. Найдите фильм и нажмите «★ Добавить».</div>';
+    $("#favlist").innerHTML = '<div class="msg">Nothing here yet. Find a title and press «★ Add».</div>';
     return;
   }
   renderKindTabs(shown);
@@ -1552,11 +1552,11 @@ function renderFav(){
     '<div class="fav">' +
       (i.poster ? '<img src="' + esc(i.poster) + '" onerror="this.remove()">' : '') +
       '<div class="g1"><div class="t">' + esc(i.title) + '</div><div class="m">' +
-      esc([i.kind, i.year, i.average != null ? "средний " + i.average : "", i.category, i.added]
+      esc([i.kind, i.year, i.average != null ? "avg " + i.average : "", i.category, i.added]
           .filter(Boolean).join(" · ")) + '</div></div>' +
       '<div class="acts">' +
-        '<button class="small" data-open="' + esc(i.key) + '">Открыть</button>' +
-        '<button class="small" data-del="' + esc(i.key) + '">Удалить</button>' +
+        '<button class="small" data-open="' + esc(i.key) + '">Open</button>' +
+        '<button class="small" data-del="' + esc(i.key) + '">Delete</button>' +
       '</div></div>').join("");
 
   $("#favlist").querySelectorAll("[data-open]").forEach(b =>
@@ -1565,9 +1565,9 @@ function renderFav(){
       const key = b.dataset.open;
       const saved = (favLoad().items || []).filter(x => x.key === key)[0];
 
-      // сначала мгновенно показываем то, что сохранено в базе
+      // first show instantly what is already stored
       if(saved){
-        const isSeries = saved.kind !== "Фильм";
+        const isSeries = saved.kind !== "Movie";
         currentCard = {
           key: saved.key, imdb_id: saved.imdb_id, kp_id: saved.kp_id,
           title: saved.title, orig_title: saved.orig_title || "", year: saved.year,
@@ -1586,16 +1586,16 @@ function renderFav(){
 
       if(key.indexOf("q:") === 0){ note(""); return; }
 
-      // потом тихо подтягиваем свежие рейтинги
-      note("Обновляю рейтинги…");
+      // then quietly refresh the ratings
+      note("Refreshing ratings…");
       const cand = key.indexOf("kp:") === 0
         ? {key: key, kp_id: key.slice(3), imdb_id: saved ? saved.imdb_id : null,
            title: saved ? saved.title : "", orig_title: saved ? saved.orig_title : "",
-           year: saved ? saved.year : null, series: saved ? saved.kind !== "Фильм" : false,
+           year: saved ? saved.year : null, series: saved ? saved.kind !== "Movie" : false,
            kp_score: null, poster: saved ? saved.poster : ""}
         : {key: key, kp_id: saved ? saved.kp_id : null, imdb_id: key,
            title: saved ? saved.title : "", orig_title: saved ? saved.orig_title : "",
-           year: saved ? saved.year : null, series: saved ? saved.kind !== "Фильм" : false,
+           year: saved ? saved.year : null, series: saved ? saved.kind !== "Movie" : false,
            kp_score: null, poster: saved ? saved.poster : ""};
       let fresh = null;
       try{ fresh = await buildCard(cand); }catch(e){ fresh = null; }
@@ -1619,7 +1619,7 @@ function renderFav(){
     });
 }
 
-// ---------------------------------------------------------- экспорт / импорт
+// ---------------------------------------------------------- export / import
 $("#exp").onclick = function(){
   const blob = new Blob([JSON.stringify(favLoad(), null, 2)], {type: "application/json"});
   const a = document.createElement("a");
@@ -1633,7 +1633,7 @@ $("#impbtn").onclick = () => $("#impfile").click();
 function applyImport(text, mode){
   const payload = JSON.parse(text);
   const incoming = Array.isArray(payload) ? payload : payload.items;
-  if(!Array.isArray(incoming)) throw new Error("в файле нет списка items");
+  if(!Array.isArray(incoming)) throw new Error("file has no items");
   const clean = incoming.filter(i => i && i.key && i.title).map(function(i){
     if(CATS.indexOf(i.category) < 0) i.category = CATS[0];
     return i;
@@ -1659,8 +1659,8 @@ function readFavFile(file, mode){
   reader.onload = function(){
     try{
       const res = applyImport(reader.result, mode);
-      toast("Импортировано: " + res.added + " · всего в базе: " + res.total);
-    }catch(e){ alert("Ошибка импорта: " + e.message); }
+      toast("Imported: " + res.added + " · total in store: " + res.total);
+    }catch(e){ alert("Import error: " + e.message); }
   };
   reader.readAsText(file);
 }
@@ -1670,7 +1670,7 @@ $("#impfile").onchange = function(ev){
   ev.target.value = "";
 };
 
-// перетащи favorites.json в окно — база подхватится без диалогов
+// drop favorites.json into the window - the store picks it up with no dialogs
 document.addEventListener("dragover", function(ev){
   if(ev.dataTransfer && Array.prototype.indexOf.call(ev.dataTransfer.types || [], "Files") >= 0){
     ev.preventDefault();
@@ -1685,14 +1685,14 @@ document.addEventListener("drop", function(ev){
   if(!f) return;
   ev.preventDefault();
   document.body.classList.remove("dropping");
-  if(!/\.json$/i.test(f.name)){ toast("Нужен файл .json"); return; }
+  if(!/\.json$/i.test(f.name)){ toast("Expected a .json"); return; }
   readFavFile(f, $("#impmode") ? $("#impmode").value : "merge");
 });
 
-// ---------------------------------------------------------- сценарий
+// ---------------------------------------------------------- main flow
 async function open1(cand, fallbackTitle){
   $("#cands").classList.add("hide");
-  note("Собираю рейтинги с четырёх сайтов…");
+  note("Collecting ratings from four sources…");
   let c = null, why = "", shownPartial = false;
   const seq = ++openSeq;
   try{
@@ -1708,9 +1708,9 @@ async function open1(cand, fallbackTitle){
   if(seq !== openSeq) return;
   if(!c && shownPartial){ note(PARTMSG, true); return; }
   if(!c){
-    note(FAILMSG + (why ? " Причина: " + why : ""), true);
+    note(FAILMSG + (why ? " Reason: " + why : ""), true);
     c = blankCard(cand.title || fallbackTitle);
-    // сведения о выбранном фильме у нас уже есть — не выбрасываем их
+    // we already have the details of the chosen title - do not throw them away
     c.imdb_id = cand.imdb_id || null;
     c.kp_id = cand.kp_id || null;
     c.title = cand.title || c.title;
@@ -1728,11 +1728,11 @@ async function open1(cand, fallbackTitle){
     const cat = autoAddCat;
     autoAddCat = null;
     if(isResolved(c)) storeFav(c, cat);
-    else toast("Не удалось опознать фильм — привяжи его ссылкой в карточке");
+    else toast("Could not resolve the title - link it with a URL in the card");
   }
 }
 
-// ---------------------------------------------------- живые подсказки при вводе
+// ---------------------------------------------------- live suggestions while typing
 let suggTimer = null;
 let suggSeq = 0;
 let suggList = [];
@@ -1746,12 +1746,12 @@ function hideSugg(){
 function drawSugg(list, q){
   suggList = list;
   if(!list.length){ hideSugg(); return; }
-  $("#sugg").innerHTML = '<div class="hd">Нашлось по запросу «' + esc(q) + '» — каснись нужного</div>' +
+  $("#sugg").innerHTML = '<div class="hd">Matches for «' + esc(q) + '» — tap the one you mean</div>' +
     list.map((c, i) => '<div class="cand" data-i="' + i + '">' +
       (c.poster ? '<img src="' + esc(c.poster) + '" onerror="this.remove()">' : '') +
       '<div><div class="t">' + esc(c.title) + '</div><div class="m">' +
       esc([(c.orig_title && c.orig_title !== c.title) ? c.orig_title : "",
-           c.years || c.year || "", c.series ? "сериал" : "фильм", c.stars]
+           c.years || c.year || "", c.series ? "series" : "movie", c.stars]
           .filter(Boolean).join(" · ")) + '</div></div>' +
       '<span class="badge" style="margin-left:auto">' + esc(c.src) + '</span></div>').join("");
   $("#sugg").classList.remove("hide");
@@ -1761,7 +1761,7 @@ function drawSugg(list, q){
       hideSugg();
       $("#q").value = c.title;
       $("#q").blur();
-      note("Гружу карточку…");
+      note("Loading the card…");
       open1(c, c.title);
     });
 }
@@ -1777,7 +1777,7 @@ async function liveSugg(){
       (alt && alt !== q.toLowerCase()) ? imdbSuggest(alt, 6) : Promise.resolve([])]);
     kp = res[0] || []; im = (res[1] || []).concat(res[2] || []);
   }catch(e){ kp = []; im = []; }
-  if(seq !== suggSeq) return;                 // пока искали, текст успели изменить
+  if(seq !== suggSeq) return;                 // the text changed while we were searching
   const ordered = hasCyr(q) ? kp.concat(im) : im.concat(kp);
   const seen = {}, pool = [];
   for(const c of ordered){
@@ -1798,7 +1798,7 @@ document.addEventListener("click", function(e){
   if(!e.target.closest("#sugg") && e.target.id !== "q") hideSugg();
 });
 
-// ---------------------------------------------------- навигация
+// ---------------------------------------------------- navigation
 let lastList = [];
 let lastQuery = "";
 
@@ -1838,7 +1838,7 @@ function goHome(){
 }
 
 function restartApp(){
-  if(!confirm("Перезапустить приложение и очистить кэш ответов?\n\nИзбранное сохранится.")) return;
+  if(!confirm("Restart the app and clear the response cache?\n\nFavorites will be kept.")) return;
   try{
     const kill = [];
     for(let i = 0; i < localStorage.length; i++){
@@ -1861,7 +1861,7 @@ $("#navfav").onclick = function(){
 };
 $("#navrestart").onclick = restartApp;
 
-// аппаратная кнопка «назад» на телефоне возвращает к результатам, а не закрывает сайт
+// the hardware back button on a phone returns to the results instead of closing the site
 function pushCardState(){
   try{ history.pushState({mr: "card"}, "", location.href); }catch(e){}
 }
@@ -1878,7 +1878,7 @@ async function run(){
   $("#favpanel").classList.add("hide");
   const asUrl = parseInputUrl(q);
   if(!asUrl) watchPanel(q, "", "", true, HINT);
-  note("Ищу по всем источникам…");
+  note("Searching all sources…");
   let list = [];
   try{ list = await smartSearch(q); }catch(e){ list = []; }
   if(!list.length){
@@ -1896,12 +1896,12 @@ async function run(){
 function renderCands(list, q){
   lastList = list;
   lastQuery = q;
-  $("#cands").innerHTML = '<h3 class="sec" style="margin-top:0">Что из этого?</h3>' +
+  $("#cands").innerHTML = '<h3 class="sec" style="margin-top:0">Which one?</h3>' +
     list.map((c, i) => '<div class="cand" data-i="' + i + '">' +
       (c.poster ? '<img src="' + esc(c.poster) + '" onerror="this.remove()">' : '') +
       '<div><div class="t">' + esc(c.title) + '</div><div class="m">' +
       esc([(c.orig_title && c.orig_title !== c.title) ? c.orig_title : "",
-           c.years || c.year || "", c.series ? "сериал" : "", c.stars]
+           c.years || c.year || "", c.series ? "series" : "", c.stars]
           .filter(Boolean).join(" · ")) + '</div></div>' +
       '<span class="badge" style="margin-left:auto">' + esc(c.src) + '</span></div>').join("");
   $("#cands").classList.remove("hide");
@@ -1911,60 +1911,60 @@ function renderCands(list, q){
 }
 
 // ---------------------------------------------------------- discover by filters (TMDB via /api/discover)
-const DISC_TITLE = "\u041f\u043e\u0434\u0431\u043e\u0440 \u043f\u043e \u0444\u0438\u043b\u044c\u0442\u0440\u0430\u043c";
-const ANYGENRE = "\u041b\u044e\u0431\u043e\u0439 \u0436\u0430\u043d\u0440";
-const ANYCOUNTRY = "\u041b\u044e\u0431\u0430\u044f \u0441\u0442\u0440\u0430\u043d\u0430";
-const ANYRATING = "\u041b\u044e\u0431\u043e\u0439 \u0440\u0435\u0439\u0442\u0438\u043d\u0433";
-const YFROM = "\u0413\u043e\u0434 \u043e\u0442";
-const YTO = "\u0413\u043e\u0434 \u0434\u043e";
-const DGO = "\u041f\u043e\u0434\u043e\u0431\u0440\u0430\u0442\u044c";
-const DCLOSE = "\u2715 \u0417\u0430\u043a\u0440\u044b\u0442\u044c";
-const DMORE = "\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u0435\u0449\u0451";
-const TMDBNOTE = "\u0414\u0430\u043d\u043d\u044b\u0435 \u043f\u043e\u0434\u0431\u043e\u0440\u0430: TMDB. \u0421\u0435\u0440\u0432\u0438\u0441 \u043d\u0435 \u0441\u0432\u044f\u0437\u0430\u043d \u0441 TMDB \u0438 \u043d\u0435 \u0441\u0435\u0440\u0442\u0438\u0444\u0438\u0446\u0438\u0440\u043e\u0432\u0430\u043d \u0438\u043c.";
-const DLOAD = "\u041f\u043e\u0434\u0431\u0438\u0440\u0430\u044e\u2026";
-const DEMPTY = "\u041d\u0438\u0447\u0435\u0433\u043e \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e \u2014 \u043e\u0441\u043b\u0430\u0431\u044c \u0444\u0438\u043b\u044c\u0442\u0440\u044b.";
-const DNOKEY = "\u041f\u043e\u0434\u0431\u043e\u0440 \u043d\u0435 \u043d\u0430\u0441\u0442\u0440\u043e\u0435\u043d \u043d\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u0435.";
-const DERR = "\u0421\u0435\u0440\u0432\u0438\u0441 \u043f\u043e\u0434\u0431\u043e\u0440\u0430 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d, \u043f\u043e\u043f\u0440\u043e\u0431\u0443\u0439 \u043f\u043e\u0437\u0436\u0435.";
-const DFOUND = "\u041d\u0430\u0439\u0434\u0435\u043d\u043e: ";
-const DSHOWN = "\u043f\u043e\u043a\u0430\u0437\u0430\u043d\u043e";
-const DOPEN = "\u041e\u0442\u043a\u0440\u044b\u0432\u0430\u044e \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0443\u2026";
-const KSER = "\u0441\u0435\u0440\u0438\u0430\u043b";
-const KFILM = "\u0444\u0438\u043b\u044c\u043c";
-const VOTES = "\u043e\u0446\u0435\u043d\u043e\u043a";
+const DISC_TITLE = "Discover by filters";
+const ANYGENRE = "Any genre";
+const ANYCOUNTRY = "Any country";
+const ANYRATING = "Any rating";
+const YFROM = "Year from";
+const YTO = "Year to";
+const DGO = "Discover";
+const DCLOSE = "\u2715 Close";
+const DMORE = "Show more";
+const TMDBNOTE = "Discovery data: TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.";
+const DLOAD = "Searching\u2026";
+const DEMPTY = "Nothing found - loosen the filters.";
+const DNOKEY = "Discovery is not configured on the server.";
+const DERR = "The discovery service is unavailable, try again later.";
+const DFOUND = "Found: ";
+const DSHOWN = "shown";
+const DOPEN = "Opening the card\u2026";
+const KSER = "series";
+const KFILM = "movie";
+const VOTES = "votes";
 const DISC_COUNTRIES = [
-  ["US", "\u0421\u0428\u0410"], ["RU", "\u0420\u043e\u0441\u0441\u0438\u044f"],
-  ["SU", "\u0421\u0421\u0421\u0420"], ["GB", "\u0412\u0435\u043b\u0438\u043a\u043e\u0431\u0440\u0438\u0442\u0430\u043d\u0438\u044f"],
-  ["FR", "\u0424\u0440\u0430\u043d\u0446\u0438\u044f"], ["DE", "\u0413\u0435\u0440\u043c\u0430\u043d\u0438\u044f"],
-  ["IT", "\u0418\u0442\u0430\u043b\u0438\u044f"], ["ES", "\u0418\u0441\u043f\u0430\u043d\u0438\u044f"],
-  ["JP", "\u042f\u043f\u043e\u043d\u0438\u044f"], ["KR", "\u042e\u0436\u043d\u0430\u044f \u041a\u043e\u0440\u0435\u044f"],
-  ["CN", "\u041a\u0438\u0442\u0430\u0439"], ["IN", "\u0418\u043d\u0434\u0438\u044f"],
-  ["SE", "\u0428\u0432\u0435\u0446\u0438\u044f"], ["DK", "\u0414\u0430\u043d\u0438\u044f"],
-  ["NO", "\u041d\u043e\u0440\u0432\u0435\u0433\u0438\u044f"], ["PL", "\u041f\u043e\u043b\u044c\u0448\u0430"],
-  ["CZ", "\u0427\u0435\u0445\u0438\u044f"], ["CA", "\u041a\u0430\u043d\u0430\u0434\u0430"],
-  ["AU", "\u0410\u0432\u0441\u0442\u0440\u0430\u043b\u0438\u044f"], ["BR", "\u0411\u0440\u0430\u0437\u0438\u043b\u0438\u044f"],
-  ["MX", "\u041c\u0435\u043a\u0441\u0438\u043a\u0430"], ["AR", "\u0410\u0440\u0433\u0435\u043d\u0442\u0438\u043d\u0430"],
-  ["IR", "\u0418\u0440\u0430\u043d"], ["TR", "\u0422\u0443\u0440\u0446\u0438\u044f"],
-  ["IL", "\u0418\u0437\u0440\u0430\u0438\u043b\u044c"], ["UA", "\u0423\u043a\u0440\u0430\u0438\u043d\u0430"]
+  ["US", "USA"], ["RU", "Russia"],
+  ["SU", "USSR"], ["GB", "United Kingdom"],
+  ["FR", "France"], ["DE", "Germany"],
+  ["IT", "Italy"], ["ES", "Spain"],
+  ["JP", "Japan"], ["KR", "South Korea"],
+  ["CN", "China"], ["IN", "India"],
+  ["SE", "Sweden"], ["DK", "Denmark"],
+  ["NO", "Norway"], ["PL", "Poland"],
+  ["CZ", "Czechia"], ["CA", "Canada"],
+  ["AU", "Australia"], ["BR", "Brazil"],
+  ["MX", "Mexico"], ["AR", "Argentina"],
+  ["IR", "Iran"], ["TR", "Turkey"],
+  ["IL", "Israel"], ["UA", "Ukraine"]
 ];
 const DISC_SORTS = [
-  ["popularity", "\u043f\u043e \u043f\u043e\u043f\u0443\u043b\u044f\u0440\u043d\u043e\u0441\u0442\u0438"],
-  ["rating", "\u043f\u043e \u0440\u0435\u0439\u0442\u0438\u043d\u0433\u0443"],
-  ["votes", "\u043f\u043e \u0447\u0438\u0441\u043b\u0443 \u043e\u0446\u0435\u043d\u043e\u043a"],
-  ["newest", "\u0441\u043d\u0430\u0447\u0430\u043b\u0430 \u043d\u043e\u0432\u044b\u0435"],
-  ["oldest", "\u0441\u043d\u0430\u0447\u0430\u043b\u0430 \u0441\u0442\u0430\u0440\u044b\u0435"]
+  ["popularity", "by popularity"],
+  ["rating", "by rating"],
+  ["votes", "by vote count"],
+  ["newest", "newest first"],
+  ["oldest", "oldest first"]
 ];
-const ANYLANG = "\u041b\u044e\u0431\u043e\u0439 \u044f\u0437\u044b\u043a";
-const DQUERY = "\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435";
+const ANYLANG = "Any language";
+const DQUERY = "Title";
 const DISC_LANGS = [
-  ["he", "\u0438\u0432\u0440\u0438\u0442"], ["ru", "\u0440\u0443\u0441\u0441\u043a\u0438\u0439"],
-  ["en", "\u0430\u043d\u0433\u043b\u0438\u0439\u0441\u043a\u0438\u0439"], ["ko", "\u043a\u043e\u0440\u0435\u0439\u0441\u043a\u0438\u0439"],
-  ["ja", "\u044f\u043f\u043e\u043d\u0441\u043a\u0438\u0439"], ["fa", "\u043f\u0435\u0440\u0441\u0438\u0434\u0441\u043a\u0438\u0439"],
-  ["tr", "\u0442\u0443\u0440\u0435\u0446\u043a\u0438\u0439"], ["ar", "\u0430\u0440\u0430\u0431\u0441\u043a\u0438\u0439"],
-  ["hi", "\u0445\u0438\u043d\u0434\u0438"], ["es", "\u0438\u0441\u043f\u0430\u043d\u0441\u043a\u0438\u0439"],
-  ["fr", "\u0444\u0440\u0430\u043d\u0446\u0443\u0437\u0441\u043a\u0438\u0439"], ["de", "\u043d\u0435\u043c\u0435\u0446\u043a\u0438\u0439"],
-  ["it", "\u0438\u0442\u0430\u043b\u044c\u044f\u043d\u0441\u043a\u0438\u0439"], ["sv", "\u0448\u0432\u0435\u0434\u0441\u043a\u0438\u0439"],
-  ["pl", "\u043f\u043e\u043b\u044c\u0441\u043a\u0438\u0439"], ["uk", "\u0443\u043a\u0440\u0430\u0438\u043d\u0441\u043a\u0438\u0439"],
-  ["zh", "\u043a\u0438\u0442\u0430\u0439\u0441\u043a\u0438\u0439"]
+  ["he", "Hebrew"], ["ru", "Russian"],
+  ["en", "English"], ["ko", "Korean"],
+  ["ja", "Japanese"], ["fa", "Persian"],
+  ["tr", "Turkish"], ["ar", "Arabic"],
+  ["hi", "Hindi"], ["es", "Spanish"],
+  ["fr", "French"], ["de", "German"],
+  ["it", "Italian"], ["sv", "Swedish"],
+  ["pl", "Polish"], ["uk", "Ukrainian"],
+  ["zh", "Chinese"]
 ];
 let discGenres = null, discPage = 1, discItems = [], discTotal = 0, discBusy = false;
 
@@ -2164,16 +2164,16 @@ $("#showfav").onclick = function(){
 };
 $("#clear").onclick = function(){
   Object.keys(localStorage).filter(k => k.indexOf("mr:") === 0).forEach(k => localStorage.removeItem(k));
-  note("Кэш очищен. Избранное не затронуто.");
+  note("Cache cleared. Favorites untouched.");
 };
 $("#fixfav").onclick = async function(){
   const db = favLoad();
   const bad = (db.items || []).filter(i => String(i.key).indexOf("q:") === 0 || (!i.imdb_id && !i.kp_id));
-  if(!bad.length){ alert("Все записи уже привязаны к фильмам."); return; }
+  if(!bad.length){ alert("All entries are already linked to titles."); return; }
   let fixed = 0, failed = [];
   for(let n = 0; n < bad.length; n++){
     const it = bad[n];
-    syncNote("Опознаю записи… " + (n + 1) + " из " + bad.length);
+    syncNote("Resolving entries… " + (n + 1) + " of " + bad.length);
     let list = [];
     try{ list = await smartSearch(it.title); }catch(e){ list = []; }
     if(!list.length){ failed.push(it.title); continue; }
@@ -2195,26 +2195,26 @@ $("#fixfav").onclick = async function(){
     renderFav();
   }
   syncNote("");
-  alert("Опознано фильмов: " + fixed +
-        (failed.length ? "\n\nНе удалось: " + failed.join(", ") : ""));
+  alert("Titles resolved: " + fixed +
+        (failed.length ? "\n\nFailed: " + failed.join(", ") : ""));
   renderFav();
 };
 
 $("#synctest").onclick = async function(){
   if(location.protocol !== "http:" && location.protocol !== "https:"){
-    alert("Файл открыт с диска (file://), общая база работает только на сайте.");
+    alert("The file is opened from disk (file://), the shared store works only on the deployed site.");
     return;
   }
-  syncNote("Проверяю…");
-  let out = "Адрес: " + new URL(API, location.href).href + "\n\n";
+  syncNote("Checking…");
+  let out = "URL: " + new URL(API, location.href).href + "\n\n";
   try{
     const r = await fetch(API + "?ts=" + Date.now(), {cache: "no-store"});
     const body = await r.text();
-    out += "Ответ сервера: " + r.status + "\n" + body.slice(0, 500);
-    if(r.status === 404) out += "\n\nФункция не задеплоена: проверь, что папка api лежит рядом с index.html.";
-    if(r.status === 501) out += "\n\nНужно подключить Blob: Storage → Create Database → Blob → Connect, потом npx vercel --prod.";
+    out += "Server response: " + r.status + "\n" + body.slice(0, 500);
+    if(r.status === 404) out += "\n\nThe function is not deployed: check that the api folder sits next to index.html index.html.";
+    if(r.status === 501) out += "\n\nConnect Blob: Storage → Create Database → Blob → Connect, then npx vercel --prod.";
   }catch(e){
-    out += "Запрос не ушёл: " + (e && e.message ? e.message : e);
+    out += "Request failed: " + (e && e.message ? e.message : e);
   }
   alert(out);
   initSync();
@@ -2223,15 +2223,15 @@ $("#synctest").onclick = async function(){
 renderFav();
 initSync();
 
-// демо-режим для проверки вёрстки без интернета: index.html?demo=1
+// demo mode to check the layout without internet: index.html?demo=1
 if(new URLSearchParams(location.search).get("demo")){
   currentCard = {
     key: "kp:493388", imdb_id: "tt1499241", kp_id: "493388",
-    title: "Каин и Авель", orig_title: "Cain and Abel", year: 2009, kind: "Сериал",
-    series: true, genres: ["Драма", "Мелодрама", "Триллер"], duration: "1 ч 10 мин",
-    director: "Ким Сон Чжан", actors: ["Со Жи Соб", "Син Хя Сон", "Че Мин Су"],
-    description: "Талантливый хирург теряет память после покушения, организованного собственным братом, и начинает жизнь заново в чужой стране.",
-    poster: "", trailer: ytLink("Каин и Авель", 2009), trailer_search: ytLink("Каин и Авель", 2009),
+    title: "Cain and Abel", orig_title: "Cain and Abel", year: 2009, kind: "Series",
+    series: true, genres: ["Drama", "Romance", "Thriller"], duration: "1 h 10 min",
+    director: "Kim Hyung-sik", actors: ["So Ji-sub", "Shin Hyun-joon", "Choi Min-soo"],
+    description: "A gifted surgeon loses his memory after an attempt on his life staged by his own brother and starts a new life in a foreign country.",
+    poster: "", trailer: ytLink("Cain and Abel", 2009), trailer_search: ytLink("Cain and Abel", 2009),
     ratings: [
       {source: "IMDb", score: 7.6, score_max: 10, votes: 1420,
        url: "https://www.imdb.com/title/tt1499241/", review: null},
@@ -2239,15 +2239,15 @@ if(new URLSearchParams(location.search).get("demo")){
        url: "https://www.rottentomatoes.com/", review: null},
       {source: "Metacritic", score: null, score_max: 100, user: null,
        url: "https://www.metacritic.com/", review: null},
-      {source: "Кинопоиск", score: 7.9, score_max: 10, votes: 3100,
+      {source: "Kinopoisk", score: 7.9, score_max: 10, votes: 3100,
        url: "https://www.kinopoisk.ru/series/493388/", review: null}
     ],
     average: 78,
-    reviews: [{text: "Редкий случай, когда мелодраматическая завязка перерастает в настоящий триллер о вине и искуплении.",
-               author: "пользователь IMDb", source: "IMDb", url: "https://www.imdb.com/title/tt1499241/reviews/"}],
+    reviews: [{text: "A rare case where a melodramatic setup grows into a real thriller about guilt and redemption.",
+               author: "reviewer on IMDb", source: "IMDb", url: "https://www.imdb.com/title/tt1499241/reviews/"}],
     sources: [{name: "IMDb", url: "https://www.imdb.com/title/tt1499241/"},
-              {name: "Кинопоиск", url: "https://www.kinopoisk.ru/series/493388/"}],
-    watch: watchLinks("Каин и Авель", "Cain and Abel", 2009, true)
+              {name: "Kinopoisk", url: "https://www.kinopoisk.ru/series/493388/"}],
+    watch: watchLinks("Cain and Abel", "Cain and Abel", 2009, true)
   };
   renderCard(currentCard);
 }
