@@ -11,6 +11,9 @@ transliteration ("artur stron" -> "Artur Stron").
 A one-page brief for a live walkthrough: [English](docs/PITCH.en.md) ·
 [Hebrew](docs/PITCH.he.md).
 
+Step-by-step guides in Russian: [the whole flow](docs/FLOW.ru.md) ·
+[AI setup](docs/AI_SETUP.ru.md) · [skills to claim](docs/SKILLS.ru.md).
+
 ## Features
 
 - **One card, many ratings** - IMDb, Kinopoisk, Rotten Tomatoes, Metacritic and
@@ -195,7 +198,9 @@ token and there is nothing to copy by hand.
 | --- | --- | --- |
 | `TMDB_KEY` | for discovery | TMDB v3 key or v4 read token, server-side only |
 | `FAVORITES_TOKEN` | no | when set, `/api/favorites` and `/api/pick` require the secret; the browser stores it once from `?token=...` |
-| `MISTRAL_API_KEY` | no | switches the evening pick from the local heuristic to Mistral |
+| `GROQ_API_KEY` | no | switches the evening pick from the local heuristic to Groq (preferred: fastest free tier) |
+| `GROQ_MODEL` | no | model override, default `llama-3.3-70b-versatile` |
+| `MISTRAL_API_KEY` | no | same, using Mistral; used when `GROQ_API_KEY` is absent |
 | `MISTRAL_MODEL` | no | model override, default `mistral-small-latest` |
 
 Then redeploy so the functions pick them up:

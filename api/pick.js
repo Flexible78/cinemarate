@@ -1,14 +1,47 @@
 // "What do we watch tonight?" - ranks the shortlist the browser sends and
 // returns one title with a one-line reason.
 //
-// The endpoint answers in two modes and the response shape is identical:
+// The endpoint answers in three modes and the response shape is identical:
+//   GROQ_API_KEY set    -> Groq (free tier, fastest) picks and explains
 //   MISTRAL_API_KEY set -> Mistral (free tier) picks and explains
 //   nothing configured  -> local heuristic picks and explains
 // So the feature degrades instead of breaking, and the key stays server-side:
 // it is read here only and never reaches the browser.
 
-const ENDPOINT = "https://api.mistral.ai/v1/chat/completions"
-const MODEL = process.env.MISTRAL_MODEL || "mistral-small-latest"
+// Both providers speak the OpenAI chat-completions dialect, so one request
+// builder covers them. First configured key wins; order = preference.
+const PROVIDERS = [
+	{
+		name: "groq",
+		envKey: "GROQ_API_KEY",
+		endpoint: "https://api.groq.com/openai/v1/chat/completions",
+		modelEnv: "GROQ_MODEL",
+		defaultModel: "llama-3.3-70b-versatile",
+	},
+	{
+		name: "mistral",
+		envKey: "MISTRAL_API_KEY",
+		endpoint: "https://api.mistral.ai/v1/chat/completions",
+		modelEnv: "MISTRAL_MODEL",
+		defaultModel: "mistral-small-latest",
+	},
+]
+
+function provider() {
+	for (let i = 0; i < PROVIDERS.length; i++) {
+		const p = PROVIDERS[i]
+		const key = String(process.env[p.envKey] || "").trim()
+		if (!key) continue
+		return {
+			name: p.name,
+			endpoint: p.endpoint,
+			model: String(process.env[p.modelEnv] || "").trim() || p.defaultModel,
+			key: key,
+		}
+	}
+	return null
+}
+
 const MAX_ITEMS = 60
 const AI_TIMEOUT_MS = 8000
 
@@ -60,20 +93,20 @@ const SYSTEM_PROMPT = [
 	'Answer with JSON only: {"key": "<key from the list>", "reason": "<max 12 words>"}',
 ].join(" ")
 
-async function aiPick(list, key) {
+async function aiPick(list, prov) {
 	const ctrl = new AbortController()
 	const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS)
 	try {
-		const r = await fetch(ENDPOINT, {
+		const r = await fetch(prov.endpoint, {
 			method: "POST",
 			signal: ctrl.signal,
 			headers: {
-				authorization: "Bearer " + key,
+				authorization: "Bearer " + prov.key,
 				"content-type": "application/json",
 				accept: "application/json",
 			},
 			body: JSON.stringify({
-				model: MODEL,
+				model: prov.model,
 				temperature: 0.8,
 				max_tokens: 160,
 				response_format: { type: "json_object" },
@@ -85,8 +118,12 @@ async function aiPick(list, key) {
 		})
 		const body = await r.json().catch(() => null)
 		if (!r.ok) {
-			const msg = body && body.message ? body.message : "http_" + r.status
-			throw new Error(String(msg))
+			// Groq reports {error:{message}}, Mistral {message} - accept both
+			const detail =
+				(body && body.error && body.error.message) ||
+				(body && body.message) ||
+				"http_" + r.status
+			throw new Error(String(detail))
 		}
 		const raw = body && body.choices && body.choices[0] && body.choices[0].message
 		const parsed = JSON.parse(String((raw && raw.content) || "{}"))
@@ -118,10 +155,15 @@ module.exports = async function (req, res) {
 		return
 	}
 
-	const hasAi = Boolean(String(process.env.MISTRAL_API_KEY || "").trim())
+	const prov = provider()
 
 	if (req.method === "GET") {
-		res.status(200).json({ ai: hasAi, model: hasAi ? MODEL : null, engine: hasAi ? "mistral" : "heuristic" })
+		res.status(200).json({
+			ai: Boolean(prov),
+			provider: prov ? prov.name : null,
+			model: prov ? prov.model : null,
+			engine: prov ? prov.name + "/" + prov.model : "heuristic",
+		})
 		return
 	}
 	if (req.method !== "POST") {
@@ -138,10 +180,10 @@ module.exports = async function (req, res) {
 			return
 		}
 
-		if (hasAi) {
+		if (prov) {
 			try {
-				const pick = await aiPick(list, String(process.env.MISTRAL_API_KEY).trim())
-				res.status(200).json({ pick: pick, engine: "mistral/" + MODEL })
+				const pick = await aiPick(list, prov)
+				res.status(200).json({ pick: pick, engine: prov.name + "/" + prov.model })
 				return
 			} catch (e) {
 				// an unavailable model must not cost the user their answer

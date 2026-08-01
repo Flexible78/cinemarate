@@ -12,3 +12,4 @@ infra/.terraform.lock.hcl
 *.tfstate.*
 terraform.tfvars
 crash.log
+*.zip
