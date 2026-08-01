@@ -2013,6 +2013,10 @@ const DISC_LANGS = [
   ["pl", "Polish"], ["uk", "Ukrainian"],
   ["zh", "Chinese"]
 ];
+// TMDB has no "detective" genre. The filter offers mystery OR crime instead:
+// "|" is TMDB's OR separator for with_genres, and api/discover.js already
+// passes it through.
+const DET_GENRE = ["9648|80", "Detective (mystery + crime)"];
 let discGenres = null, discPage = 1, discItems = [], discTotal = 0, discBusy = false;
 
 function discOpts(list, cur){
@@ -2079,6 +2083,8 @@ async function fillDiscGenres(){
   const list = (t === "tv" ? g.tv : g.movie) || [];
   const cur = sel.value;
   sel.innerHTML = '<option value="">' + esc(ANYGENRE) + '</option>' +
+    '<option value="' + esc(DET_GENRE[0]) + '"' +
+      (DET_GENRE[0] === cur ? ' selected' : '') + '>' + esc(DET_GENRE[1]) + '</option>' +
     list.map(function(x){
       return '<option value="' + esc(String(x.id)) + '"' +
         (String(x.id) === cur ? ' selected' : '') + '>' + esc(x.name) + '</option>';
@@ -2274,6 +2280,76 @@ initSync();
 setInterval(refreshFromServer, 60000);
 document.addEventListener("visibilitychange", function(){ if(!document.hidden) refreshFromServer(); });
 window.addEventListener("focus", refreshFromServer);
+
+// ------------------------------------------------- "what do we watch tonight?"
+// The shortlist is built here and ranked by /api/pick. That endpoint answers
+// with or without an AI provider configured, so this button never breaks.
+const PICK_API = "api/pick";
+
+function pickCandidates(){
+  return (favLoad().items || [])
+    .filter(function(i){ return i && i.title; })
+    .slice(0, 60)
+    .map(function(i){
+      return {
+        key: i.key,
+        title: i.title,
+        year: i.year || null,
+        kind: i.kind || "",
+        average: typeof i.average === "number" ? i.average : null,
+        category: i.category || ""
+      };
+    });
+}
+
+async function pickTonight(){
+  const box = $("#pickout");
+  const items = pickCandidates();
+  if(!items.length){
+    if(box) box.textContent = "Save a few titles to Favorites first.";
+    return;
+  }
+  if(box) box.textContent = "Choosing\u2026";
+  try{
+    const r = await fetch(PICK_API, {
+      method: "POST",
+      headers: syncHeaders({"Content-Type": "application/json"}),
+      body: JSON.stringify({items: items})
+    });
+    const text = await r.text();
+    let data = null;
+    try{ data = JSON.parse(text); }catch(e){ data = null; }
+    if(!r.ok || !data || !data.pick) throw new Error((data && data.error) || ("code " + r.status));
+    const p = data.pick;
+    if(box){
+      box.textContent = "\u2192 " + p.title + (p.year ? " (" + p.year + ")" : "") +
+        (p.reason ? " \u00b7 " + p.reason : "") +
+        (data.engine ? " \u00b7 " + data.engine : "");
+    }
+  }catch(e){
+    if(box) box.textContent = "Could not choose: " + (e && e.message ? e.message : e);
+  }
+}
+
+// the button lives next to the sync controls; built here so the markup above
+// stays untouched
+(function buildPickUi(){
+  const anchor = $("#synctest");
+  const bar = anchor ? anchor.parentNode : null;
+  if(!bar) return;
+  const btn = document.createElement("button");
+  btn.className = "small";
+  btn.id = "pickbtn";
+  btn.type = "button";
+  btn.textContent = "\ud83c\udfb2 What do we watch tonight?";
+  bar.insertBefore(btn, anchor);
+  const out = document.createElement("div");
+  out.className = "tip";
+  out.id = "pickout";
+  out.style.margin = "8px 0 0";
+  if(bar.parentNode) bar.parentNode.insertBefore(out, bar.nextSibling);
+  btn.onclick = function(){ pickTonight(); };
+})();
 
 // demo mode to check the layout without internet: index.html?demo=1
 if(new URLSearchParams(location.search).get("demo")){
