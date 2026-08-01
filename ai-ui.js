@@ -164,8 +164,165 @@
     if (L.kinopoisk) links.appendChild(link(L.kinopoisk, "Kinopoisk"));
     if (L.trailer) links.appendChild(link(L.trailer, "Trailer"));
     right.appendChild(links);
+    right.appendChild(actions(item));
     box.appendChild(right);
     return box;
+  }
+
+  // The list used to be read-only: the titles were plain text, so nothing could
+  // be opened or saved. Every row now reuses the app's own pipeline - the same
+  // one the plain search and the discovery panel use - so a card opens with all
+  // ratings and the entry lands in the shared Favorites store.
+  function cats() {
+    if (typeof CATS !== "undefined" && CATS && CATS.length) return CATS;
+    return ["Want to watch", "Maybe", "Loved", "Watched"];
+  }
+
+  function candFor(item, imdb) {
+    return {
+      key: imdb ? "tt:" + imdb : "q:" + item.title,
+      imdb_id: imdb || null,
+      kp_id: null,
+      title: item.title,
+      orig_title: "",
+      year: item.year || null,
+      years: "",
+      series: item.mediaType === "tv" || item.kind === "series",
+      poster: item.poster || "",
+      kp_score: null,
+      stars: "TMDB",
+      src: "TMDB"
+    };
+  }
+
+  async function imdbId(item) {
+    if (!item.tmdbId) return "";
+    try {
+      var type = item.mediaType === "tv" ? "tv" : "movie";
+      var r = await fetch("api/discover?mode=imdb&type=" + type + "&id=" + encodeURIComponent(item.tmdbId));
+      var d = await r.json();
+      return (d && d.imdb_id) || "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  // Open the full rating card. With a TMDB id the app's discovery opener does
+  // the work; without one we fall back to the normal search by title.
+  async function openItem(item, say) {
+    say("opening the card\u2026");
+    try {
+      if (item.tmdbId && typeof discOpen === "function") {
+        await discOpen({
+          type: item.mediaType === "tv" ? "tv" : "movie",
+          tmdb_id: item.tmdbId,
+          title: item.title,
+          orig_title: "",
+          year: item.year || null,
+          poster: item.poster || ""
+        });
+        say("");
+        return;
+      }
+      var box = document.getElementById("q");
+      if (box && typeof run === "function") {
+        box.value = item.title;
+        say("");
+        await run();
+        return;
+      }
+      say("could not open this title");
+    } catch (e) {
+      say("could not open: " + (e && e.message ? e.message : e));
+    }
+  }
+
+  // storeFav writes into the card's status line, which does not exist while the
+  // AI list is the only thing on screen, so a temporary one is provided.
+  function saveEntry(cardObj, category) {
+    var tmp = null;
+    if (!document.getElementById("favmsg")) {
+      tmp = el("span");
+      tmp.id = "favmsg";
+      tmp.style.display = "none";
+      document.body.appendChild(tmp);
+    }
+    try {
+      storeFav(cardObj, category);
+    } finally {
+      if (tmp && tmp.parentNode) tmp.parentNode.removeChild(tmp);
+    }
+  }
+
+  async function addItem(item, category, say) {
+    if (typeof storeFav !== "function" || typeof buildCard !== "function") {
+      say("this build cannot save from the list");
+      return;
+    }
+    say("resolving and saving\u2026");
+    try {
+      var imdb = await imdbId(item);
+      var cand = candFor(item, imdb);
+      if (!imdb && typeof smartSearch === "function") {
+        var list = [];
+        try { list = await smartSearch(item.title + (item.year ? " " + item.year : "")); } catch (e) { list = []; }
+        if (!list.length) { try { list = await smartSearch(item.title); } catch (e) { list = []; } }
+        if (list.length) cand = list[0];
+      }
+      var built = null;
+      try { built = await buildCard(cand); } catch (e) { built = null; }
+      if (built && typeof isResolved === "function" && isResolved(built)) {
+        saveEntry(built, category);
+        say("saved to \u00ab" + category + "\u00bb");
+        return;
+      }
+      saveEntry({
+        key: cand.key,
+        title: item.title,
+        orig_title: "",
+        year: item.year || null,
+        kind: item.kind || "",
+        poster: item.poster || "",
+        series: cand.series,
+        genres: [],
+        average: item.average != null ? item.average : null,
+        imdb_id: cand.imdb_id,
+        kp_id: null,
+        sources: [],
+        watch: []
+      }, category);
+      say("saved to \u00ab" + category + "\u00bb");
+    } catch (e) {
+      say("not saved: " + (e && e.message ? e.message : e));
+    }
+  }
+
+  function actions(item) {
+    var row = el("div");
+    row.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0 0";
+    var openBtn = el("button", "small", "Open card");
+    openBtn.type = "button";
+    var pick = document.createElement("select");
+    pick.className = "small";
+    cats().forEach(function (c) { pick.appendChild(new Option(c, c)); });
+    var addBtn = el("button", "primary small", "\u2605 Add");
+    addBtn.type = "button";
+    var msg = el("span", "tip", "");
+    msg.style.margin = "0";
+    function say(t) { msg.textContent = t; }
+    openBtn.addEventListener("click", function () {
+      openBtn.disabled = true;
+      Promise.resolve(openItem(item, say)).then(function () { openBtn.disabled = false; });
+    });
+    addBtn.addEventListener("click", function () {
+      addBtn.disabled = true;
+      Promise.resolve(addItem(item, pick.value, say)).then(function () { addBtn.disabled = false; });
+    });
+    row.appendChild(openBtn);
+    row.appendChild(pick);
+    row.appendChild(addBtn);
+    row.appendChild(msg);
+    return row;
   }
 
   async function search() {

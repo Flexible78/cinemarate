@@ -142,6 +142,38 @@ function inRange(year, years) {
 	return y >= years.from && y <= years.to
 }
 
+// A wish for a detective story must not come back as a war drama. Every item
+// has to match the genre recognised in the wish, the requested kind and the
+// year window before it reaches the browser.
+function genreOk(item, ids) {
+	if (!ids || !ids.length) return true
+	const have = [].concat(item.genreIds || [])
+	if (!have.length) return true
+	const want = {}
+	ids.forEach(function (id) {
+		want[id] = true
+		if (TV_GENRE_MAP[id] !== undefined) want[TV_GENRE_MAP[id]] = true
+	})
+	return have.some(function (id) {
+		return Boolean(want[id])
+	})
+}
+
+function kindOk(item, kind) {
+	const isTv = item.mediaType === "tv" || item.kind === "series"
+	if (kind === "series") return isTv
+	if (kind === "movie") return !isTv
+	if (kind === "documentary") return genreOk(item, [99])
+	if (kind === "animation") return genreOk(item, [16])
+	return true
+}
+
+function relevant(items, kind, genreIds, years) {
+	return (items || []).filter(function (it) {
+		return inRange(it.year, years) && kindOk(it, kind) && genreOk(it, genreIds)
+	})
+}
+
 function tokenOk(req) {
 	const want = String(process.env.FAVORITES_TOKEN || "").trim()
 	if (!want) return true
@@ -355,6 +387,9 @@ async function enrich(item) {
 		kind: item.kind || "",
 		why: item.why || "",
 		found: false,
+		tmdbId: null,
+		mediaType: "",
+		genreIds: [],
 		average: null,
 		votes: null,
 		poster: "",
@@ -371,6 +406,9 @@ async function enrich(item) {
 	if (!hit) return out
 	const d = String(hit.release_date || hit.first_air_date || "")
 	out.found = true
+	out.tmdbId = hit.id
+	out.mediaType = hit.media_type === "tv" ? "tv" : "movie"
+	out.genreIds = [].concat(hit.genre_ids || [])
 	out.title = String(hit.title || hit.name || item.title)
 	out.year = Number(d.slice(0, 4)) || item.year
 	out.kind = hit.media_type === "tv" ? "series" : item.kind || "movie"
@@ -423,6 +461,9 @@ function fromTmdb(r) {
 	links.tmdb = "https://www.themoviedb.org/" + (isTv ? "tv/" : "movie/") + r.id
 	return {
 		key: (isTv ? "tv:" : "movie:") + r.id,
+		tmdbId: r.id,
+		mediaType: isTv ? "tv" : "movie",
+		genreIds: [].concat(r.genre_ids || []),
 		title: title,
 		year: year,
 		kind: isTv ? "series" : "movie",
@@ -605,6 +646,8 @@ module.exports = async function handler(req, res) {
 			const kind = KINDS[String(body.kind || "any")] ? String(body.kind) : "any"
 			const count = Math.max(3, Math.min(MAX_ITEMS, Number(body.count) || 6))
 			const years = parseYears(wish, body)
+			const genreIds = genresFor(wish)
+			const span = years || { from: 1900, to: new Date().getFullYear() + 1 }
 			const prov = await ai.chosen({})
 			if (!prov) {
 				res.status(503).json({
@@ -620,21 +663,24 @@ module.exports = async function handler(req, res) {
 
 			// A year window is answered from the database first and only ranked by
 			// the model, so an old knowledge cutoff cannot smuggle in a 2022 title.
-			if (years) {
+			if (years || genreIds.length) {
 				let cands = []
 				try {
-					cands = await discoverCandidates(kind, years, genresFor(wish))
+					cands = await discoverCandidates(kind, span, genreIds)
 				} catch (e) {
 					cands = []
 				}
 				if (cands.length) {
-					source = "TMDB releases " + years.from + "-" + years.to + ", ranked by the model"
+					source = years
+						? "TMDB releases " + years.from + "-" + years.to + ", ranked by the model"
+						: "TMDB catalogue for the requested genre, ranked by the model"
 					try {
-						items = await rankCandidates(prov, wish, kind, years, cands, count)
+						items = await rankCandidates(prov, wish, kind, span, cands, count)
 					} catch (e) {
 						items = cands.slice(0, count)
 						note = "the model could not rank the list, showing the best rated releases"
 					}
+					items = relevant(items, kind, genreIds, years)
 				}
 			}
 
@@ -676,19 +722,14 @@ module.exports = async function handler(req, res) {
 						})
 					}),
 				)
-				if (years) {
-					const inWindow = enriched.filter(function (x) {
-						return inRange(x.year, years)
-					})
-					if (inWindow.length) {
-						items = inWindow
-					} else {
-						items = enriched
-						note =
-							"nothing from " + years.from + "-" + years.to + " matched, showing the closest ideas"
-					}
+				const ok = relevant(enriched, kind, genreIds, years)
+				if (ok.length) {
+					items = ok
 				} else {
 					items = enriched
+					note = years
+						? "nothing from " + years.from + "-" + years.to + " matched, showing the closest ideas"
+						: "nothing matched the request exactly, showing the closest ideas"
 				}
 			}
 
