@@ -33,8 +33,11 @@ Step-by-step guides in Russian: [the whole flow](docs/FLOW.ru.md) ·
 - **Detective filter** - TMDB has no detective genre, so the genre list offers a
   synthetic *Detective (mystery + crime)* option that queries both ids at once.
 - **Pick for tonight** - one button ranks the watchlist and answers with a title
-  and a one-line reason. With `MISTRAL_API_KEY` set the ranking is done by
-  Mistral; without it a local heuristic answers in the same shape, so the
+  and a one-line reason. Any configured provider key (Groq, Mistral, Inception
+  Mercury, Agnes) is used: the model id is resolved from the provider's own
+  `/models` list, verified with a tiny live request, and the working combination
+  is saved, so a renamed model does not break anything. Without a key a local
+  heuristic answers in the same shape, so the
   feature never depends on an external provider being reachable.
 - **Three themes** - dark, high-contrast and light, cycled by one small button
   and remembered in `localStorage`.
@@ -107,7 +110,7 @@ query -> suggestions -> candidate list -> card -> favorites
 index.html          UI, search pipeline, card builder, favorites, themes
 api/discover.js     TMDB proxy: health / genres / imdb / search / discover
 api/favorites.js    shared favorites store on Vercel Blob (GET, POST, ?debug=1)
-api/pick.js         picks one title from the watchlist (Mistral or heuristic)
+api/pick.js         picks one title from the watchlist (AI or heuristic)
 infra/              Terraform description of the Vercel environment
 scripts/            local checks reused by CI
 .github/workflows/  static checks on every push and pull request
@@ -144,7 +147,7 @@ requires a paid account.
 | GitHub account | source, CI, automatic deploys | free |
 | Vercel account | hosting, functions, Blob storage | free tier |
 | TMDB API key | the discovery panel | free, issued instantly |
-| Mistral API key | AI pick of the evening | optional, free tier |
+| a Groq / Mistral / Inception / Agnes key | AI pick of the evening | optional, free tier |
 
 ### 1. Get the code
 
@@ -198,10 +201,17 @@ token and there is nothing to copy by hand.
 | --- | --- | --- |
 | `TMDB_KEY` | for discovery | TMDB v3 key or v4 read token, server-side only |
 | `FAVORITES_TOKEN` | no | when set, `/api/favorites` and `/api/pick` require the secret; the browser stores it once from `?token=...` |
-| `GROQ_API_KEY` | no | switches the evening pick from the local heuristic to Groq (preferred: fastest free tier) |
-| `GROQ_MODEL` | no | model override, default `llama-3.3-70b-versatile` |
-| `MISTRAL_API_KEY` | no | same, using Mistral; used when `GROQ_API_KEY` is absent |
-| `MISTRAL_MODEL` | no | model override, default `mistral-small-latest` |
+| `GROQ_API_KEY` | no | enables the AI pick through Groq |
+| `MISTRAL_API_KEY` | no | enables the AI pick through Mistral |
+| `INCEPTION_MERCURY_API_KEY` | no | enables the AI pick through Inception Mercury |
+| `AGNES_AI_20_FLASH_API_KEY` | no | enables the AI pick through Agnes AI Flash |
+| `AI_PROVIDER` | no | pin one provider by name: `groq`, `mistral`, `inception`, `agnes` |
+| `GROQ_MODEL` / `MISTRAL_MODEL` / `INCEPTION_MODEL` / `AGNES_MODEL` | no | preferred model name; still matched against the provider's real model list |
+| `GROQ_BASE_URL` / `MISTRAL_BASE_URL` / `INCEPTION_BASE_URL` / `AGNES_BASE_URL` | no | override an OpenAI-compatible base URL without touching code |
+
+Several keys can coexist: providers are tried in registry order and the first
+one that passes a live check wins, so a dead provider costs one request and
+never the whole feature.
 
 Then redeploy so the functions pick them up:
 
@@ -225,7 +235,8 @@ own preview URL. The CI workflow runs on both.
 | --- | --- |
 | `/api/discover?mode=health` | `hasKey: true` |
 | `/api/favorites?debug=1` | `hasStoreId: true` and a successful read probe |
-| `/api/pick` (GET) | `engine: "mistral"` or `"heuristic"` |
+| `/api/pick` (GET) | `ai`, `provider`, `model`, `engine`, `configured`, `verified` |
+| `/api/pick?probe=1` | one row per configured provider: model list size, chosen model, sample answer or the exact error |
 | Favorites panel | says *Shared store* with an entry count |
 | Actions tab | the CI run is green |
 

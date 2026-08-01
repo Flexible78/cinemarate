@@ -20,8 +20,10 @@ Vercel serverless functions: `api/discover.js` (TMDB proxy), `api/favorites.js`
   overwrite that silently lost entries.
 - Every external call has its own time budget and the card renders
   progressively, so a slow source degrades the page instead of blocking it.
-- The AI pick works without any provider configured: with a key it uses Mistral,
-  without one a local heuristic answers in the same response shape.
+- The AI pick is provider-agnostic: several OpenAI-compatible providers are
+  registered, the model id is resolved from the provider's own model list,
+  verified with a tiny live request, and the working pair is cached. With no key,
+  or with every provider down, a local heuristic answers in the same shape.
 - The prompt treats titles and notes as untrusted data, and the key the model
   returns is validated against the list that was sent.
 

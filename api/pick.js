@@ -1,46 +1,22 @@
 // "What do we watch tonight?" - ranks the shortlist the browser sends and
 // returns one title with a one-line reason.
 //
-// The endpoint answers in three modes and the response shape is identical:
-//   GROQ_API_KEY set    -> Groq (free tier, fastest) picks and explains
-//   MISTRAL_API_KEY set -> Mistral (free tier) picks and explains
-//   nothing configured  -> local heuristic picks and explains
-// So the feature degrades instead of breaking, and the key stays server-side:
-// it is read here only and never reaches the browser.
+// Any provider key configured in the project -> that model picks and explains.
+// Nothing configured, or nothing reachable  -> local heuristic picks and
+// explains. The response shape is identical either way, so the feature degrades
+// instead of breaking.
+//
+// Which provider and which model is decided in lib/ai-providers.js: it parses
+// the provider's model list, verifies the model with a tiny live request and
+// saves the working combination. Keys are read there and only there - they
+// never reach the browser and are never stored.
+//
+// GET  /api/pick            -> current engine plus what is configured/verified
+// GET  /api/pick?probe=1    -> check every provider now and save the winner
+// GET  /api/pick?refresh=1  -> ignore the saved choice and re-verify
+// POST /api/pick            -> { items: [...] } and get one title back
 
-// Both providers speak the OpenAI chat-completions dialect, so one request
-// builder covers them. First configured key wins; order = preference.
-const PROVIDERS = [
-	{
-		name: "groq",
-		envKey: "GROQ_API_KEY",
-		endpoint: "https://api.groq.com/openai/v1/chat/completions",
-		modelEnv: "GROQ_MODEL",
-		defaultModel: "llama-3.3-70b-versatile",
-	},
-	{
-		name: "mistral",
-		envKey: "MISTRAL_API_KEY",
-		endpoint: "https://api.mistral.ai/v1/chat/completions",
-		modelEnv: "MISTRAL_MODEL",
-		defaultModel: "mistral-small-latest",
-	},
-]
-
-function provider() {
-	for (let i = 0; i < PROVIDERS.length; i++) {
-		const p = PROVIDERS[i]
-		const key = String(process.env[p.envKey] || "").trim()
-		if (!key) continue
-		return {
-			name: p.name,
-			endpoint: p.endpoint,
-			model: String(process.env[p.modelEnv] || "").trim() || p.defaultModel,
-			key: key,
-		}
-	}
-	return null
-}
+const ai = require("../lib/ai-providers")
 
 const MAX_ITEMS = 60
 const AI_TIMEOUT_MS = 8000
@@ -93,10 +69,39 @@ const SYSTEM_PROMPT = [
 	'Answer with JSON only: {"key": "<key from the list>", "reason": "<max 12 words>"}',
 ].join(" ")
 
+// Models sometimes wrap JSON in prose or a code fence - take the first object.
+function parseJson(text) {
+	const s = String(text || "")
+	try {
+		return JSON.parse(s)
+	} catch (e) {}
+	const a = s.indexOf("{")
+	const b = s.lastIndexOf("}")
+	if (a !== -1 && b > a) {
+		try {
+			return JSON.parse(s.slice(a, b + 1))
+		} catch (e) {}
+	}
+	throw new Error("model did not return JSON")
+}
+
 async function aiPick(list, prov) {
 	const ctrl = new AbortController()
 	const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS)
-	try {
+
+	// Strict JSON mode is only an optimisation: not every provider supports
+	// response_format, so a rejection is retried once without it.
+	async function ask(useJson) {
+		const payload = {
+			model: prov.model,
+			temperature: 0.8,
+			max_tokens: 200,
+			messages: [
+				{ role: "system", content: SYSTEM_PROMPT },
+				{ role: "user", content: JSON.stringify({ candidates: list }) },
+			],
+		}
+		if (useJson) payload.response_format = { type: "json_object" }
 		const r = await fetch(prov.endpoint, {
 			method: "POST",
 			signal: ctrl.signal,
@@ -105,28 +110,29 @@ async function aiPick(list, prov) {
 				"content-type": "application/json",
 				accept: "application/json",
 			},
-			body: JSON.stringify({
-				model: prov.model,
-				temperature: 0.8,
-				max_tokens: 160,
-				response_format: { type: "json_object" },
-				messages: [
-					{ role: "system", content: SYSTEM_PROMPT },
-					{ role: "user", content: JSON.stringify({ candidates: list }) },
-				],
-			}),
+			body: JSON.stringify(payload),
 		})
 		const body = await r.json().catch(() => null)
 		if (!r.ok) {
 			// Groq reports {error:{message}}, Mistral {message} - accept both
 			const detail =
-				(body && body.error && body.error.message) ||
+				(body && body.error && (body.error.message || body.error)) ||
 				(body && body.message) ||
 				"http_" + r.status
 			throw new Error(String(detail))
 		}
+		return body
+	}
+
+	try {
+		let body = null
+		try {
+			body = await ask(true)
+		} catch (e) {
+			body = await ask(false)
+		}
 		const raw = body && body.choices && body.choices[0] && body.choices[0].message
-		const parsed = JSON.parse(String((raw && raw.content) || "{}"))
+		const parsed = parseJson(String((raw && raw.content) || ""))
 		// never trust the model's key: it has to exist in the list we sent
 		const hit = list.filter((i) => i.key === String(parsed.key))[0]
 		if (!hit) throw new Error("model returned an unknown key")
@@ -155,14 +161,28 @@ module.exports = async function (req, res) {
 		return
 	}
 
-	const prov = provider()
+	// Availability check: parse each provider's model list, try the preferred
+	// model for real and save the first combination that answers.
+	if (req.method === "GET" && req.query && (req.query.probe === "1" || req.query.check === "1")) {
+		res.status(200).json(await ai.probeAll())
+		return
+	}
+
+	const prov = await ai.chosen({
+		refresh: Boolean(req.query && req.query.refresh === "1"),
+	})
 
 	if (req.method === "GET") {
+		const state = await ai.status()
 		res.status(200).json({
 			ai: Boolean(prov),
 			provider: prov ? prov.name : null,
 			model: prov ? prov.model : null,
 			engine: prov ? prov.name + "/" + prov.model : "heuristic",
+			configured: state.configured,
+			known: state.known,
+			pinned: state.pinned,
+			verified: state.verified,
 		})
 		return
 	}
@@ -187,6 +207,7 @@ module.exports = async function (req, res) {
 				return
 			} catch (e) {
 				// an unavailable model must not cost the user their answer
+				ai.invalidate()
 				res.status(200).json({
 					pick: heuristicPick(list),
 					engine: "heuristic (ai unavailable)",
