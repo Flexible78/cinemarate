@@ -6,6 +6,44 @@
 const FILE = "favorites.json"
 const EMPTY = { version: 2, updated: "", items: [] }
 
+// The list is deliberately shared between everyone who uses the site.
+// A plain "overwrite with whatever this browser has" would silently drop
+// entries added on another device while this tab was open, so every POST
+// carries `base`: the keys this client had when it last talked to the
+// server. Keys the server knows but `base` does not are concurrent adds
+// from another device and survive; keys present in `base` but missing from
+// `items` are real deletions and are dropped.
+function mergeItems(serverItems, clientItems, baseKeys) {
+	const base = {}
+	;(baseKeys || []).forEach(function (k) {
+		base[String(k)] = true
+	})
+	const out = {}
+	;(serverItems || []).forEach(function (i) {
+		if (!i || !i.key) return
+		if (base[String(i.key)]) return
+		out[String(i.key)] = i
+	})
+	;(clientItems || []).forEach(function (i) {
+		if (!i || !i.key) return
+		const cur = out[String(i.key)]
+		if (!cur || String(i.added || "") >= String(cur.added || "")) out[String(i.key)] = i
+	})
+	return Object.keys(out).map(function (k) {
+		return out[k]
+	})
+}
+
+// Optional shared secret. When FAVORITES_TOKEN is not set the endpoint
+// behaves exactly as before, so nothing has to be configured for the site
+// to keep working.
+function tokenOk(req) {
+	const want = process.env.FAVORITES_TOKEN
+	if (!want) return true
+	const got = req.headers["x-favorites-token"] || (req.query && req.query.token) || ""
+	return String(got) === String(want)
+}
+
 function opts() {
 	const token = process.env.BLOB_READ_WRITE_TOKEN
 	return token ? { token } : {}
@@ -47,9 +85,13 @@ module.exports = async function (req, res) {
 	res.setHeader("Cache-Control", "no-store")
 	res.setHeader("Access-Control-Allow-Origin", "*")
 	res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
-	res.setHeader("Access-Control-Allow-Headers", "Content-Type")
+	res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Favorites-Token")
 	if (req.method === "OPTIONS") {
 		res.status(204).end()
+		return
+	}
+	if (!tokenOk(req)) {
+		res.status(401).json({ error: "unauthorized" })
 		return
 	}
 
@@ -83,13 +125,24 @@ module.exports = async function (req, res) {
 				res.status(400).json({ error: "expected JSON with field items" })
 				return
 			}
+			const incoming = body.items.filter((i) => i && i.key && i.title).slice(0, 5000)
+			const current = await readDb()
+			const merged = Array.isArray(body.base)
+				? mergeItems(current.items, incoming, body.base)
+				: incoming
 			const clean = {
 				version: 2,
 				updated: new Date().toISOString().slice(0, 19).replace("T", " "),
-				items: body.items.filter((i) => i && i.key && i.title).slice(0, 5000),
+				items: merged.slice(0, 5000),
 			}
 			await writeDb(clean)
-			res.status(200).json({ ok: true, count: clean.items.length })
+			res.status(200).json({
+				ok: true,
+				count: clean.items.length,
+				keys: clean.items.map(function (i) {
+					return i.key
+				}),
+			})
 			return
 		}
 		res.status(405).json({ error: "method not allowed" })

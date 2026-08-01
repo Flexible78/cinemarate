@@ -1331,6 +1331,24 @@ let REMOTE = false;
 let lastSyncError = "";
 let pushTimer = null;
 const API = "api/favorites";
+// keys this browser knows the server already has - lets the function tell a
+// concurrent add on the other device apart from a real deletion here
+let baseKeys = [];
+// optional shared secret; only used if the deployment sets FAVORITES_TOKEN
+const TOKEN_KEY = "movieRatings.syncToken";
+(function(){
+  try{
+    const t = new URLSearchParams(location.search).get("token");
+    if(t) localStorage.setItem(TOKEN_KEY, t);
+  }catch(e){}
+})();
+function syncHeaders(extra){
+  const h = Object.assign({}, extra || {});
+  let t = "";
+  try{ t = localStorage.getItem(TOKEN_KEY) || ""; }catch(e){}
+  if(t) h["X-Favorites-Token"] = t;
+  return h;
+}
 
 function syncNote(text){
   const el = $("#syncinfo");
@@ -1338,7 +1356,7 @@ function syncNote(text){
 }
 
 async function remoteLoad(){
-  const r = await fetch(API + "?ts=" + Date.now(), {cache: "no-store"});
+  const r = await fetch(API + "?ts=" + Date.now(), {cache: "no-store", headers: syncHeaders()});
   const text = await r.text();
   if(!r.ok){
     let msg = "code " + r.status;
@@ -1349,14 +1367,15 @@ async function remoteLoad(){
   let db = null;
   try{ db = JSON.parse(text); }catch(e){ throw new Error("server did not return JSON"); }
   if(!db || !Array.isArray(db.items)) throw new Error("response has no items");
+  baseKeys = db.items.map(function(i){ return i.key; });
   return db;
 }
 
 async function remotePush(db){
   const r = await fetch(API, {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(db)
+    headers: syncHeaders({"Content-Type": "application/json"}),
+    body: JSON.stringify({version: 2, updated: db.updated || "", items: db.items || [], base: baseKeys})
   });
   const text = await r.text();
   if(!r.ok){
@@ -1364,6 +1383,10 @@ async function remotePush(db){
     try{ const j = JSON.parse(text); if(j.error) msg = j.error; }catch(e){}
     throw new Error(msg);
   }
+  try{
+    const j = JSON.parse(text);
+    if(j && Array.isArray(j.keys)) baseKeys = j.keys;
+  }catch(e){}
   return true;
 }
 
@@ -1408,6 +1431,30 @@ async function initSync(){
     lastSyncError = String(e && e.message ? e.message : e);
     syncNote("Local store · " + lastSyncError);
   }
+}
+
+// the same list is used from several devices, so pull the server copy every
+// now and then instead of trusting whatever this tab loaded at startup
+async function refreshFromServer(){
+  if(!REMOTE || document.hidden) return;
+  const prev = baseKeys.slice();
+  let server = null;
+  try{ server = await remoteLoad(); }catch(e){ return; }
+  const known = {};
+  prev.forEach(function(k){ known[k] = true; });
+  const local = favLoad();
+  const byKey = {};
+  (server.items || []).forEach(function(i){ byKey[i.key] = i; });
+  // entries added here and not pushed yet must survive the refresh
+  (local.items || []).forEach(function(i){ if(!known[i.key] && !byKey[i.key]) byKey[i.key] = i; });
+  const items = Object.keys(byKey).map(function(k){ return byKey[k]; });
+  const cur = local.items || [];
+  const same = items.length === cur.length &&
+    items.every(function(i){ return cur.some(function(j){ return j.key === i.key; }); });
+  if(same) return;
+  localStorage.setItem(FAV_KEY, JSON.stringify({version: 2, updated: server.updated || "", items: items}));
+  renderFav();
+  syncNote("Shared store - entries: " + items.length);
 }
 
 function favLoad(){
@@ -2208,7 +2255,7 @@ $("#synctest").onclick = async function(){
   syncNote("Checking…");
   let out = "URL: " + new URL(API, location.href).href + "\n\n";
   try{
-    const r = await fetch(API + "?ts=" + Date.now(), {cache: "no-store"});
+    const r = await fetch(API + "?ts=" + Date.now(), {cache: "no-store", headers: syncHeaders()});
     const body = await r.text();
     out += "Server response: " + r.status + "\n" + body.slice(0, 500);
     if(r.status === 404) out += "\n\nThe function is not deployed: check that the api folder sits next to index.html index.html.";
@@ -2222,6 +2269,11 @@ $("#synctest").onclick = async function(){
 
 renderFav();
 initSync();
+
+// keep the two devices in step without a page reload
+setInterval(refreshFromServer, 60000);
+document.addEventListener("visibilitychange", function(){ if(!document.hidden) refreshFromServer(); });
+window.addEventListener("focus", refreshFromServer);
 
 // demo mode to check the layout without internet: index.html?demo=1
 if(new URLSearchParams(location.search).get("demo")){
