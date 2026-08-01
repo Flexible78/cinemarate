@@ -131,8 +131,9 @@ async function aiPick(list, prov) {
 		} catch (e) {
 			body = await ask(false)
 		}
-		const raw = body && body.choices && body.choices[0] && body.choices[0].message
-		const parsed = parseJson(String((raw && raw.content) || ""))
+		// ai.answerText tolerates every response shape we have seen: plain string
+		// content, an array of parts, reasoning_content, or choices[].text.
+		const parsed = parseJson(ai.answerText(body))
 		// never trust the model's key: it has to exist in the list we sent
 		const hit = list.filter((i) => i.key === String(parsed.key))[0]
 		if (!hit) throw new Error("model returned an unknown key")

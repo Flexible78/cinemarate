@@ -174,7 +174,7 @@
   <div class="head">
     <div>
       <h1>Movie and TV ratings</h1>
-      <div class="sub">Build v18 · No-install web app · IMDb · Rotten Tomatoes · Metacritic · Kinopoisk · TVmaze</div>
+      <div class="sub">Build v19 · No-install web app · IMDb · Rotten Tomatoes · Metacritic · Kinopoisk · TVmaze</div>
     </div>
     <div>
       <span class="tip" style="margin:0">Proxy</span>
@@ -2302,14 +2302,18 @@ function pickCandidates(){
     });
 }
 
+function pickSay(msg){
+  const boxes = document.querySelectorAll(".pickout");
+  for(let i=0;i<boxes.length;i++) boxes[i].textContent = msg;
+}
+
 async function pickTonight(){
-  const box = $("#pickout");
   const items = pickCandidates();
   if(!items.length){
-    if(box) box.textContent = "Save a few titles to Favorites first.";
+    pickSay("Save a few titles to Favorites first.");
     return;
   }
-  if(box) box.textContent = "Choosing\u2026";
+  pickSay("Choosing\u2026");
   try{
     const r = await fetch(PICK_API, {
       method: "POST",
@@ -2321,34 +2325,50 @@ async function pickTonight(){
     try{ data = JSON.parse(text); }catch(e){ data = null; }
     if(!r.ok || !data || !data.pick) throw new Error((data && data.error) || ("code " + r.status));
     const p = data.pick;
-    if(box){
-      box.textContent = "\u2192 " + p.title + (p.year ? " (" + p.year + ")" : "") +
-        (p.reason ? " \u00b7 " + p.reason : "") +
-        (data.engine ? " \u00b7 " + data.engine : "");
-    }
+    pickSay("\u2192 " + p.title + (p.year ? " (" + p.year + ")" : "") +
+      (p.reason ? " \u00b7 " + p.reason : "") +
+      (data.engine ? " \u00b7 " + data.engine : ""));
   }catch(e){
-    if(box) box.textContent = "Could not choose: " + (e && e.message ? e.message : e);
+    pickSay("Could not choose: " + (e && e.message ? e.message : e));
   }
 }
 
-// the button lives next to the sync controls; built here so the markup above
-// stays untouched
+// The old build mounted the button inside the Favorites panel only, so it was
+// invisible until that panel was opened. Now one copy sits right under the
+// header subtitle (always visible) and another stays next to the sync controls.
 (function buildPickUi(){
+  function makeBtn(){
+    const btn = document.createElement("button");
+    btn.className = "small";
+    btn.type = "button";
+    btn.textContent = "\ud83c\udfb2 What do we watch tonight?";
+    btn.onclick = function(){ pickTonight(); };
+    return btn;
+  }
+  function makeOut(inline){
+    const out = document.createElement(inline ? "span" : "div");
+    out.className = "tip pickout";
+    out.style.margin = inline ? "0 0 0 8px" : "8px 0 0";
+    return out;
+  }
+  const sub = document.querySelector(".sub");
+  if(sub && sub.parentNode){
+    const bar = document.createElement("div");
+    bar.style.margin = "10px 0 0";
+    const btn = makeBtn();
+    btn.id = "pickbtn";
+    const out = makeOut(true);
+    out.id = "pickout";
+    bar.appendChild(btn);
+    bar.appendChild(out);
+    sub.parentNode.insertBefore(bar, sub.nextSibling);
+  }
   const anchor = $("#synctest");
-  const bar = anchor ? anchor.parentNode : null;
-  if(!bar) return;
-  const btn = document.createElement("button");
-  btn.className = "small";
-  btn.id = "pickbtn";
-  btn.type = "button";
-  btn.textContent = "\ud83c\udfb2 What do we watch tonight?";
-  bar.insertBefore(btn, anchor);
-  const out = document.createElement("div");
-  out.className = "tip";
-  out.id = "pickout";
-  out.style.margin = "8px 0 0";
-  if(bar.parentNode) bar.parentNode.insertBefore(out, bar.nextSibling);
-  btn.onclick = function(){ pickTonight(); };
+  const row = anchor ? anchor.parentNode : null;
+  if(row){
+    row.insertBefore(makeBtn(), anchor);
+    if(row.parentNode) row.parentNode.insertBefore(makeOut(false), row.nextSibling);
+  }
 })();
 
 // demo mode to check the layout without internet: index.html?demo=1
