@@ -1,40 +1,63 @@
-# Деплой на Vercel с общей базой Избранного
+# Deploying CinemaRate on Vercel
 
-Содержимое этой папки — самодостаточный сайт:
+This folder is a self-contained site:
 
-- `index.html` — само приложение;
-- `api/favorites.js` — чтение и запись общей базы `favorites.json`;
-- `favicon.ico` — иконка.
+- `index.html` - the whole application (UI, search pipeline, favorites, themes);
+- `api/discover.js` - TMDB proxy for the discovery panel;
+- `api/favorites.js` - read and write the shared `favorites.json` store;
+- `favicon.ico` - the icon.
 
-## Как выложить
+## First deploy
 
-1. Заведи бесплатный аккаунт на vercel.com (вход через GitHub или почту).
-2. Установи Node.js, открой командную строку в этой папке и выполни:
-   ```
+1. Create a free account on vercel.com (sign in with GitHub or email).
+2. Install Node.js, open a terminal in this folder and run:
+   ```bash
    npx vercel
    ```
-   На вопросы отвечай Enter. В конце получишь адрес вида `имя.vercel.app`.
-3. В панели проекта на vercel.com открой вкладку **Storage** → **Create Database** → **Blob** → **Connect to Project**.
-   Доступ выдаётся через OIDC: Vercel сам подставляет короткоживущий токен и BLOB_STORE_ID.
-   Копировать и вводить ничего не надо.
-4. Снова выполни `npx vercel --prod`, чтобы сайт подхватил хранилище.
+   Accept the defaults; at the end you get an address like `name.vercel.app`.
+3. In the project dashboard open **Storage** -> **Create Database** -> **Blob**
+   -> **Connect to Project**. Access is granted through OIDC: Vercel injects a
+   short-lived token and `BLOB_STORE_ID` automatically, so there is nothing to
+   copy or paste.
+4. Open **Settings** -> **Environment Variables** and add `TMDB_KEY` with a
+   TMDB v3 API key or a v4 read access token (Production and Preview). Mark it
+   as sensitive. Without this variable everything works except the discovery
+   panel, which reports that discovery is not configured.
+5. Run `npx vercel --prod` again so the deployment picks up the storage and the
+   environment variable.
 
-После этого открой сайт с любого устройства. В панели «Моё Избранное» будет написано
-«Общая база» — значит, записи уходят на сервер и видны везде.
+Open the site from any device. The *My favorites* panel should say
+*Shared store*, which means entries are stored on the server and visible
+everywhere.
 
-## Что важно знать
+## Continuous deployment from GitHub
 
-- База публичная: кто знает адрес сайта, тот может её читать и менять. Для списка фильмов это нормально.
-- При первом открытии локальные записи браузера и серверные объединяются, ничего не теряется.
-- Файл `standalone/index.html` с диска продолжает работать как раньше, на локальной базе.
-- Экспорт и импорт JSON остаются на месте как резервная копия.
+```bash
+gh repo create cinemarate --public --source=. --remote=origin --push
+npx vercel git connect
+```
 
-## Если Избранное не синхронизируется
+After that every push to `main` deploys production automatically and every pull
+request gets its own preview URL.
 
-Открой `адрес-сайта/api/favorites?debug=1`. Ответ покажет:
+## Good to know
 
-- `hasStoreId` — привязано ли хранилище к проекту;
-- `hasOidc` — выдал ли Vercel токен функции;
-- `probe` — результат реального чтения базы или текст ошибки.
+- The shared favorites store is public by design: anyone who knows the site
+  address can read and edit that list. For a watchlist this is acceptable.
+- On first open, local browser entries and server entries are merged, so nothing
+  is lost.
+- JSON export and import remain available as a manual backup.
+- Discovery responses are cached at the edge (24 hours for search and discover,
+  7 days for genre and IMDb lookups), so the TMDB rate limit is never an issue.
 
-Если `hasStoreId: false` — хранилище не привязано либо после привязки не было повторного `npx vercel --prod`.
+## Self-checks
+
+- `your-site/api/discover?mode=health` - reports whether `TMDB_KEY` is
+  configured and reachable.
+- `your-site/api/favorites?debug=1` - reports:
+  - `hasStoreId` - whether a Blob store is attached to the project;
+  - `hasOidc` - whether Vercel issued a token to the function;
+  - `probe` - the result of a real read, or the error text.
+
+If `hasStoreId` is `false`, the store is not attached, or `npx vercel --prod`
+was not run after attaching it.

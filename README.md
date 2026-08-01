@@ -27,6 +27,58 @@ transliteration ("artur stron" -> "Artur Stron").
 - **Three themes** - dark, high-contrast and light, cycled by one small button
   and remembered in `localStorage`.
 
+## How to use
+
+1. **Search a title** - type a name in the field (English, Russian or a
+   transliteration) and pick one of the live suggestions, or paste an IMDb or
+   Kinopoisk link and press *Search*.
+2. **Read the card** - ratings from every source that answered, an average
+   score out of 100, poster, genres, runtime, director, cast, one review and
+   trailer links.
+3. **Save it** - choose a category (*Want to watch*, *Maybe*, *Loved*,
+   *Watched*) and press *Add*. Open *Favorites* to filter by category and by
+   type (*Movies*, *Series*, *Documentaries*).
+4. **Discover something new** - press *Discover by filters* and combine type,
+   genre, country, original language, year range, minimum rating and sort
+   order; press a result to open its full rating card.
+5. **Back up or move the list** - *Export JSON* writes `favorites.json`;
+   *Import JSON* merges or replaces, and dropping the file into the window
+   works too.
+6. **Switch the theme** - the small button in the header cycles dark,
+   high-contrast and light.
+
+If a query cannot be resolved, the card shows a *Link to a title* box: paste an
+IMDb or Kinopoisk URL and the entry becomes a normal, saveable card.
+
+## How it works
+
+```
+query -> suggestions -> candidate list -> card -> favorites
+```
+
+1. **Query normalization** - the query is lower-cased, `e/yo` folded and
+   transliterated, producing several key variants for the sources.
+2. **Candidate search** - IMDb suggest, Cinemeta, TVmaze, Wikidata and
+   Kinopoisk suggest are queried in parallel; each candidate is scored against
+   the query (`relScore`, threshold 0.34) and everything below the threshold is
+   dropped, which is what keeps Cyrillic searches relevant.
+3. **Card build** - for the chosen candidate the app resolves the IMDb id
+   (directly or through the Wikidata link to the Kinopoisk id), then fetches
+   IMDb, Rotten Tomatoes, Metacritic and Kinopoisk in parallel. Every call has
+   its own timeout budget and the card is rendered progressively: partial data
+   appears immediately, missing sources are simply marked as unavailable.
+4. **Average score** - all available scores are normalized to a 0-100 scale and
+   averaged, so one number is comparable across sources.
+5. **Caching** - resolved cards and searches are cached in `localStorage` for
+   24 hours; empty or failed results are never cached.
+6. **Favorites** - entries are written to `localStorage` and, on the deployed
+   site, merged into the shared store through `/api/favorites`, so several
+   devices see the same list.
+7. **Discovery** - filters are sent to `/api/discover`, which calls TMDB
+   server-side with the secret key, caches the response at the edge and returns
+   a normalized list; picking an item resolves its IMDb id and reuses the same
+   card pipeline.
+
 ## Tech stack
 
 - Vanilla JavaScript, HTML and CSS in a single `index.html` (no build step,
