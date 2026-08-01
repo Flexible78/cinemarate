@@ -195,45 +195,88 @@
     };
   }
 
-  async function imdbId(item) {
+  function wait(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  // The IMDb lookup used to hang forever when the request stalled, which left
+  // the row stuck on the progress message. It is aborted after a few seconds
+  // now and always resolves.
+  async function imdbIdFast(item, ms) {
     if (!item.tmdbId) return "";
+    var type = item.mediaType === "tv" ? "tv" : "movie";
+    var ctl = typeof AbortController === "function" ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, ms || 8000) : null;
     try {
-      var type = item.mediaType === "tv" ? "tv" : "movie";
-      var r = await fetch("api/discover?mode=imdb&type=" + type + "&id=" + encodeURIComponent(item.tmdbId));
+      var url = "api/discover?mode=imdb&type=" + type + "&id=" + encodeURIComponent(item.tmdbId);
+      var r = await fetch(url, ctl ? { signal: ctl.signal } : {});
       var d = await r.json();
       return (d && d.imdb_id) || "";
     } catch (e) {
       return "";
+    } finally {
+      if (timer) clearTimeout(timer);
     }
   }
 
-  // Open the full rating card. With a TMDB id the app's discovery opener does
-  // the work; without one we fall back to the normal search by title.
+  async function imdbId(item) {
+    return await imdbIdFast(item, 8000);
+  }
+
+  // The card is rendered by the app below this panel, so bring it into view as
+  // soon as it appears - open1 fills it progressively.
+  function focusCard() {
+    var tries = 0;
+    var tick = setInterval(function () {
+      tries++;
+      var cardEl = document.getElementById("card");
+      if (cardEl && !cardEl.classList.contains("hide")) {
+        cardEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        clearInterval(tick);
+      } else if (tries > 24) {
+        clearInterval(tick);
+      }
+    }, 250);
+  }
+
+  function searchByTitle(item) {
+    var box = document.getElementById("q");
+    if (!box) return false;
+    box.value = item.title + (item.year ? " " + item.year : "");
+    if (typeof run === "function") { run(); focusCard(); return true; }
+    var go = document.getElementById("go");
+    if (go) { go.click(); focusCard(); return true; }
+    return false;
+  }
+
+  // Open the full rating card. The IMDb id is resolved here and the candidate
+  // goes straight to the app's own opener, so the card is built by the same
+  // pipeline the plain search uses. Every path ends visibly: nothing can wait
+  // forever, the progress message is always cleared and the card is scrolled
+  // into view.
   async function openItem(item, say) {
+    var failed = false;
     say("opening the card\u2026");
     try {
-      if (item.tmdbId && typeof discOpen === "function") {
-        await discOpen({
-          type: item.mediaType === "tv" ? "tv" : "movie",
-          tmdb_id: item.tmdbId,
-          title: item.title,
-          orig_title: "",
-          year: item.year || null,
-          poster: item.poster || ""
-        });
-        say("");
+      var imdb = await imdbIdFast(item, 8000);
+      if (typeof note === "function") note("");
+      if (imdb && typeof open1 === "function") {
+        focusCard();
+        await Promise.race([open1(candFor(item, imdb), item.title), wait(20000)]);
         return;
       }
-      var box = document.getElementById("q");
-      if (box && typeof run === "function") {
-        box.value = item.title;
-        say("");
-        await run();
+      if (searchByTitle(item)) return;
+      if (imdb) {
+        window.open("https://www.imdb.com/title/" + imdb + "/", "_blank");
         return;
       }
+      failed = true;
       say("could not open this title");
     } catch (e) {
+      failed = true;
       say("could not open: " + (e && e.message ? e.message : e));
+    } finally {
+      if (!failed) say("");
     }
   }
 
@@ -312,11 +355,15 @@
     function say(t) { msg.textContent = t; }
     openBtn.addEventListener("click", function () {
       openBtn.disabled = true;
-      Promise.resolve(openItem(item, say)).then(function () { openBtn.disabled = false; });
+      Promise.resolve(openItem(item, say)).catch(function (e) {
+        say("could not open: " + (e && e.message ? e.message : e));
+      }).then(function () { openBtn.disabled = false; });
     });
     addBtn.addEventListener("click", function () {
       addBtn.disabled = true;
-      Promise.resolve(addItem(item, pick.value, say)).then(function () { addBtn.disabled = false; });
+      Promise.resolve(addItem(item, pick.value, say)).catch(function (e) {
+        say("not saved: " + (e && e.message ? e.message : e));
+      }).then(function () { addBtn.disabled = false; });
     });
     row.appendChild(openBtn);
     row.appendChild(pick);
