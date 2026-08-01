@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  checks:
+    name: Static checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts || npm install --ignore-scripts
+
+      - name: Syntax-check serverless functions
+        run: |
+          for f in api/*.js; do
+            echo "checking $f"
+            node --check "$f"
+          done
+
+      - name: Syntax-check inline browser script
+        run: node scripts/check-inline-js.mjs index.html
+
+      - name: Check that no secrets are tracked
+        run: |
+          if git ls-files | grep -E '(^|/)\.env'; then
+            echo "::error::an .env file is tracked by git"
+            exit 1
+          fi
+          if git grep -nIE 'api_key=[A-Za-z0-9]{20,}' -- '*.js' '*.html'; then
+            echo "::error::possible hardcoded API key"
+            exit 1
+          fi
+          echo "no tracked secrets found"
