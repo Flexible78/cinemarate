@@ -177,14 +177,24 @@
       var r = await fetch(API, {
         method: "POST",
         headers: hdrs({ "Content-Type": "application/json" }),
-        body: JSON.stringify({ action: "suggest", wish: wish, kind: ui.kind.value, count: 6 })
+        body: JSON.stringify({
+          action: "suggest",
+          wish: wish,
+          kind: ui.kind.value,
+          count: 6,
+          yearFrom: Number(ui.yearFrom.value) || null,
+          yearTo: Number(ui.yearTo.value) || null
+        })
       });
       var data = await r.json();
       if (!r.ok) {
         throw new Error(((data && data.error) || ("code " + r.status)) + (data && data.detail ? ": " + data.detail : ""));
       }
-      ui.searchInfo.textContent = (data.items || []).length + " ideas \u00b7 " + data.engine +
-        (data.verifiedWith === "tmdb" ? " \u00b7 scores verified against TMDB" : "");
+      var bits = [(data.items || []).length + " ideas", data.engine];
+      if (data.years) bits.push("years " + data.years.from + "-" + data.years.to);
+      if (data.source) bits.push(data.source);
+      if (data.note) bits.push(data.note);
+      ui.searchInfo.textContent = bits.join(" \u00b7 ");
       (data.items || []).forEach(function (it) { ui.results.appendChild(card(it)); });
     } catch (e) {
       ui.searchInfo.textContent = "search failed: " + (e && e.message ? e.message : e);
@@ -232,7 +242,7 @@
     searchPanel.style.cssText = "display:none;margin:8px 0 0;padding:8px;border:1px solid rgba(128,128,128,.35);border-radius:8px";
     ui.wish = document.createElement("textarea");
     ui.wish.rows = 2;
-    ui.wish.placeholder = "e.g. a slow Scandinavian detective story with a female lead, nothing gory";
+    ui.wish.placeholder = "e.g. a clever gripping detective story, 2024-2026 - years in the text are respected";
     ui.wish.style.cssText = "width:100%;box-sizing:border-box";
     ui.kind = document.createElement("select");
     ui.kind.className = "small";
@@ -243,6 +253,20 @@
     var line2 = el("div");
     line2.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 0";
     line2.appendChild(ui.kind);
+    ui.yearFrom = document.createElement("input");
+    ui.yearFrom.type = "number";
+    ui.yearFrom.placeholder = "year from";
+    ui.yearFrom.min = "1900";
+    ui.yearFrom.max = "2100";
+    ui.yearFrom.style.cssText = "width:96px";
+    ui.yearTo = document.createElement("input");
+    ui.yearTo.type = "number";
+    ui.yearTo.placeholder = "year to";
+    ui.yearTo.min = "1900";
+    ui.yearTo.max = "2100";
+    ui.yearTo.style.cssText = "width:96px";
+    line2.appendChild(ui.yearFrom);
+    line2.appendChild(ui.yearTo);
     line2.appendChild(goBtn);
     ui.searchInfo = el("span", "tip", "");
     ui.searchInfo.style.margin = "0";
